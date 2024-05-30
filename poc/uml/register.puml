@@ -1,0 +1,12 @@
+@startuml
+
+entity Agent
+entity AgentCommsAPI
+entity Server
+
+ -> Agent: /register (username, password)
+Agent -> AgentCommsAPI: /register (username, password)
+AgentCommsAPI -> Server: Validate credentials
+Server -> AgentCommsAPI: Return token
+AgentCommsAPI -> Agent: Return token
+@enduml

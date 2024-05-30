@@ -1,0 +1,39 @@
+@startuml
+title Agent Architecture
+
+package "Agent" {
+
+    package "Event Handling" {
+        class EventAccumulator {
+            +addEvent(Event)
+        }
+
+        class EventStorage {
+            +storeEvent(Event)
+        }
+
+        EventAccumulator --> EventStorage : stores if full
+    }
+
+    package "Event Sending" {
+        class EventSender {
+            +sendEvents(List<Event>)
+        }
+
+        EventAccumulator --> EventSender : notify after T time or N events
+    }
+
+    package "Command Handling" {
+        class CommandEndpoint {
+            +waitForCommands()
+        }
+    }
+}
+
+package "Server" {
+}
+
+EventSender --> Server : send events
+CommandEndpoint --> Server : receive commands
+
+@enduml

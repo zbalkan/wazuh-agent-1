@@ -1,0 +1,23 @@
+@startuml
+
+entity Agent
+entity AgentCommsAPI
+entity Server
+
+Agent -> AgentCommsAPI: /login (UUID, password)
+AgentCommsAPI -> Server: Validate credentials
+Server -> AgentCommsAPI: Return token
+AgentCommsAPI -> Agent: Return token
+
+Agent -> AgentCommsAPI: /stateless (token, event)
+AgentCommsAPI -> Server: Validate token
+Server -> AgentCommsAPI: Process event
+AgentCommsAPI -> Agent: Acknowledge event
+
+== Token Expiry ==
+Agent -> AgentCommsAPI: /login (UUID, password)
+AgentCommsAPI -> Server: Validate credentials
+Server -> AgentCommsAPI: Return new token
+AgentCommsAPI -> Agent: Return new token
+
+@enduml
