@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+service RealTimeService {
+  rpc RealTimeStream(stream RealTimeMessage) returns (stream RealTimeMessage);
+}
+
+message RealTimeMessage {
+  string message = 1;
+}

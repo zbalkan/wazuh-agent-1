@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+service XmlService {
+  rpc SendXml (XmlRequest) returns (XmlResponse);
+}
+
+message XmlRequest {
+  string xml_data = 1;
+}
+
+message XmlResponse {
+  string message = 1;
+}
