@@ -60,8 +60,7 @@ private:
             if (req_.target() == "/login") {
                 handleLogin();
             } else if (req_.target() == "/stateless") {
-                res_.result(http::status::ok);
-                res_.body() = "Received stateless request";
+                handleStateless();
             } else if (req_.target() == "/commands") {
                 res_.result(http::status::ok);
                 res_.body() = "Received commands request";
@@ -107,6 +106,30 @@ private:
             } else {
                 res_.result(http::status::unauthorized);
                 res_.body() = "Invalid or expired password";
+            }
+        } else {
+            res_.result(http::status::bad_request);
+            res_.body() = "Invalid request format";
+        }
+    }
+
+    void handleStateless() {
+        auto body = req_.body();
+        auto uuidPos = body.find(uuidKey);
+        auto tokenPos = body.find(tokenKey);
+        auto eventPos = body.find(eventKey);
+        if (uuidPos != std::string::npos && tokenPos != std::string::npos) {
+            std::string uuid = body.substr(uuidPos + uuidKey.length(), tokenPos - uuidPos - uuidKey.length() - 1);
+            std::cout << uuid << std::endl;
+            std::string token = body.substr(tokenPos + tokenKey.length(), eventPos - tokenPos - tokenKey.length() - 1);
+            std::cout << token << std::endl;
+
+            if (token == validTokens[uuid].token) {
+                res_.result(http::status::ok);
+                res_.body() = "Valid token";
+            } else {
+                res_.result(http::status::unauthorized);
+                res_.body() = "Invalid or expired token";
             }
         } else {
             res_.result(http::status::bad_request);
