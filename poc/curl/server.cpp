@@ -8,6 +8,9 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <unordered_map>
+#include <chrono>
+#include <ctime>
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -16,6 +19,22 @@ using tcp = net::ip::tcp;
 
 void fail(beast::error_code ec, char const* what) {
     std::cerr << what << ": " << ec.message() << "\n";
+}
+
+struct TokenInfo {
+    std::string token;
+    std::time_t expiry;
+};
+
+std::unordered_map<std::string, TokenInfo> validTokens;
+
+std::string generateToken() {
+    std::string token = "new_token";
+    return token;
+}
+
+bool verifyToken(const std::string& uuid, const std::string& token) {
+    return true;
 }
 
 class session : public std::enable_shared_from_this<session> {
@@ -54,8 +73,12 @@ private:
             res_.result(http::status::ok);
             res_.body() = "Hello, World!";
         } else if (req_.method() == http::verb::post) {
-            res_.result(http::status::ok);
-            res_.body() = "Received: " + req_.body();
+            if (req_.target() == "/login") {
+                handleLogin();
+            } else {
+                res_.result(http::status::ok);
+                res_.body() = "Received: " + req_.body();
+            }
         } else {
             res_.result(http::status::bad_request);
             res_.body() = "Invalid request method";
@@ -73,6 +96,32 @@ private:
                     fail(ec, "write");
                 }
             });
+    }
+
+    void handleLogin() {
+        auto body = req_.body();
+        auto uuidPos = body.find("uuid=");
+        auto tokenPos = body.find("token=");
+        if (uuidPos != std::string::npos && tokenPos != std::string::npos) {
+            std::string uuid = body.substr(uuidPos + 5, tokenPos - uuidPos - 6);
+            std::cout << uuid << std::endl;
+            std::string token = body.substr(tokenPos + 6);
+            std::cout << token << std::endl;
+
+            if (verifyToken(uuid, token)) {
+                std::string newToken = generateToken();
+                validTokens[uuid] = {newToken, std::time(nullptr) + 3600}; // 1 hour expiry
+
+                res_.result(http::status::ok);
+                res_.body() = "New Token: " + newToken;
+            } else {
+                res_.result(http::status::unauthorized);
+                res_.body() = "Invalid or expired token";
+            }
+        } else {
+            res_.result(http::status::bad_request);
+            res_.body() = "Invalid request format";
+        }
     }
 };
 
