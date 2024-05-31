@@ -27,7 +27,6 @@ void SendPostRequest(const std::string& pUrl, const std::string& data) {
         httpRequest.post(url, data,
                          [](const std::string& response) {
                              std::cout << "POST Response: " << response << std::endl;
-                             session_token = response;
                          },
                          [](const std::string& error, const long code) {
                              std::cerr << "POST Request failed: " << error << " with code " << code << std::endl;
@@ -44,7 +43,8 @@ void SendLoginRequest(const std::string& pUrl, const std::string& uuid, const st
         std::string data = "uuid=" + uuid + "&password=" + password;
         httpRequest.post(url, data,
                          [](const std::string& response) {
-                             std::cout << "Login Response: " << response << std::endl;
+                            std::cout << "Login Response: " << response << std::endl;
+                            session_token = response;
                          },
                          [](const std::string& error, const long code) {
                              std::cerr << "Login Request failed: " << error << " with code " << code << std::endl;
