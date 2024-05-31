@@ -97,7 +97,7 @@ private:
                 validTokens[uuid] = {newToken, std::time(nullptr) + 3600}; // 1 hour expiry
 
                 res_.result(http::status::ok);
-                res_.body() = "New Token: " + newToken;
+                res_.body() = newToken;
             } else {
                 res_.result(http::status::unauthorized);
                 res_.body() = "Invalid or expired password";

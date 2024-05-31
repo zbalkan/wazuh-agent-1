@@ -2,6 +2,8 @@
 #include <string>
 #include "HTTPRequest.hpp"
 
+std::string session_token {};
+
 void SendGetRequest(const std::string& pUrl) {
     try {
         HttpURL url {pUrl};
@@ -25,6 +27,7 @@ void SendPostRequest(const std::string& pUrl, const std::string& data) {
         httpRequest.post(url, data,
                          [](const std::string& response) {
                              std::cout << "POST Response: " << response << std::endl;
+                             session_token = response;
                          },
                          [](const std::string& error, const long code) {
                              std::cerr << "POST Request failed: " << error << " with code " << code << std::endl;
