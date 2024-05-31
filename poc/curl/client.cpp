@@ -34,11 +34,11 @@ void SendPostRequest(const std::string& pUrl, const std::string& data) {
     }
 }
 
-void SendLoginRequest(const std::string& pUrl, const std::string& uuid, const std::string& token) {
+void SendLoginRequest(const std::string& pUrl, const std::string& uuid, const std::string& password) {
     try {
         HttpURL url {pUrl + "/login"};
         HTTPRequest& httpRequest = HTTPRequest::instance();
-        std::string data = "uuid=" + uuid + "&token=" + token;
+        std::string data = "uuid=" + uuid + "&password=" + password;
         httpRequest.post(url, data,
                          [](const std::string& response) {
                              std::cout << "Login Response: " << response << std::endl;
@@ -63,8 +63,8 @@ int main() {
 
     // Send a login request
     std::string uuid = "agent_uuid";
-    std::string token = "previously_generated_token";
-    SendLoginRequest(url, uuid, token);
+    std::string password = "123456";
+    SendLoginRequest(url, uuid, password);
 
     return 0;
 }

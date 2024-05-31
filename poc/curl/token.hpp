@@ -27,6 +27,6 @@ std::string generateToken() {
     return token;
 }
 
-bool verifyToken(const std::string& uuid, const std::string& token) {
+bool verifyPassword(const std::string& uuid, const std::string& password) {
     return true;
 }

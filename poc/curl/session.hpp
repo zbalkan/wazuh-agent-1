@@ -85,14 +85,14 @@ private:
     void handleLogin() {
         auto body = req_.body();
         auto uuidPos = body.find("uuid=");
-        auto tokenPos = body.find("token=");
-        if (uuidPos != std::string::npos && tokenPos != std::string::npos) {
-            std::string uuid = body.substr(uuidPos + 5, tokenPos - uuidPos - 6);
+        auto passwordPos = body.find("password=");
+        if (uuidPos != std::string::npos && passwordPos != std::string::npos) {
+            std::string uuid = body.substr(uuidPos + 5, passwordPos - uuidPos - 6);
             std::cout << uuid << std::endl;
-            std::string token = body.substr(tokenPos + 6);
-            std::cout << token << std::endl;
+            std::string password = body.substr(passwordPos + 6);
+            std::cout << password << std::endl;
 
-            if (verifyToken(uuid, token)) {
+            if (verifyPassword(uuid, password)) {
                 std::string newToken = generateToken();
                 validTokens[uuid] = {newToken, std::time(nullptr) + 3600}; // 1 hour expiry
 
@@ -100,7 +100,7 @@ private:
                 res_.body() = "New Token: " + newToken;
             } else {
                 res_.result(http::status::unauthorized);
-                res_.body() = "Invalid or expired token";
+                res_.body() = "Invalid or expired password";
             }
         } else {
             res_.result(http::status::bad_request);
