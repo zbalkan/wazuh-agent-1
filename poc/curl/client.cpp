@@ -61,10 +61,10 @@ void SendStatelessRequest(const std::string& pUrl, const std::string& token, con
         std::string data = "token=" + token + "&event=" + event;
         httpRequest.post(url, data,
                          [](const std::string& response) {
-                             std::cout << "Login Response: " << response << std::endl;
+                             std::cout << "Stateless Response: " << response << std::endl;
                          },
                          [](const std::string& error, const long code) {
-                             std::cerr << "Login Request failed: " << error << " with code " << code << std::endl;
+                             std::cerr << "Stateless Request failed: " << error << " with code " << code << std::endl;
                          });
     } catch (const std::exception& e) {
         std::cerr << "Exception: " << e.what() << std::endl;
@@ -78,10 +78,10 @@ void SendCommandsRequest(const std::string& pUrl, const std::string& token) {
         std::string data = "token=" + token;
         httpRequest.post(url, data,
                          [](const std::string& response) {
-                             std::cout << "Login Response: " << response << std::endl;
+                             std::cout << "Commands Response: " << response << std::endl;
                          },
                          [](const std::string& error, const long code) {
-                             std::cerr << "Login Request failed: " << error << " with code " << code << std::endl;
+                             std::cerr << "Commands Request failed: " << error << " with code " << code << std::endl;
                          });
     } catch (const std::exception& e) {
         std::cerr << "Exception: " << e.what() << std::endl;
