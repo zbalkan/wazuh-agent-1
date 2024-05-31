@@ -59,6 +59,12 @@ private:
         } else if (req_.method() == http::verb::post) {
             if (req_.target() == "/login") {
                 handleLogin();
+            } else if (req_.target() == "/stateless") {
+                res_.result(http::status::ok);
+                res_.body() = "Received stateless request: " + req_.body();
+            } else if (req_.target() == "/commands") {
+                res_.result(http::status::ok);
+                res_.body() = "Received commands request: " + req_.body();
             } else {
                 res_.result(http::status::ok);
                 res_.body() = "Received: " + req_.body();
