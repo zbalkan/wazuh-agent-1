@@ -90,12 +90,12 @@ private:
 
     void handleLogin() {
         auto body = req_.body();
-        auto uuidPos = body.find("uuid=");
-        auto passwordPos = body.find("password=");
+        auto uuidPos = body.find(uuidKey);
+        auto passwordPos = body.find(passwordKey);
         if (uuidPos != std::string::npos && passwordPos != std::string::npos) {
-            std::string uuid = body.substr(uuidPos + 5, passwordPos - uuidPos - 6);
+            std::string uuid = body.substr(uuidPos + uuidKey.length(), passwordPos - uuidPos - uuidKey.length() - 1);
             std::cout << uuid << std::endl;
-            std::string password = body.substr(passwordPos + 6);
+            std::string password = body.substr(passwordPos + passwordKey.length());
             std::cout << password << std::endl;
 
             if (verifyPassword(uuid, password)) {

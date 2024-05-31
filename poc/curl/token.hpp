@@ -1,17 +1,17 @@
 #pragma once
 
-#include <boost/asio/ip/tcp.hpp>
+#include <boost/beast/core.hpp>
 #include <string>
 #include <unordered_map>
 #include <chrono>
 #include <ctime>
 
-namespace beast = boost::beast;
-namespace http = beast::http;
-namespace net = boost::asio;
-using tcp = net::ip::tcp;
+const std::string uuidKey = "uuid=";
+const std::string tokenKey = "token=";
+const std::string eventKey = "event=";
+const std::string passwordKey = "password=";
 
-void fail(beast::error_code ec, char const* what) {
+void fail(boost::beast::error_code ec, char const* what) {
     std::cerr << what << ": " << ec.message() << "\n";
 }
 

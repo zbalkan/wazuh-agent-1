@@ -2,6 +2,8 @@
 #include <string>
 #include "HTTPRequest.hpp"
 
+#include "token.hpp"
+
 std::string session_token {};
 
 void SendGetRequest(const std::string& pUrl) {
@@ -40,7 +42,7 @@ void SendLoginRequest(const std::string& pUrl, const std::string& uuid, const st
     try {
         HttpURL url {pUrl + "/login"};
         HTTPRequest& httpRequest = HTTPRequest::instance();
-        std::string data = "uuid=" + uuid + "&password=" + password;
+        std::string data = uuidKey + uuid + "&" + passwordKey + password;
         httpRequest.post(url, data,
                          [](const std::string& response) {
                             std::cout << "Login Response: " << response << std::endl;
@@ -54,11 +56,11 @@ void SendLoginRequest(const std::string& pUrl, const std::string& uuid, const st
     }
 }
 
-void SendStatelessRequest(const std::string& pUrl, const std::string& token, const std::string& event) {
+void SendStatelessRequest(const std::string& pUrl, const std::string& uuid, const std::string& token, const std::string& event) {
     try {
         HttpURL url {pUrl + "/stateless"};
         HTTPRequest& httpRequest = HTTPRequest::instance();
-        std::string data = "token=" + token + "&event=" + event;
+        std::string data = uuidKey + uuid + "&" + tokenKey + token + "&" + eventKey + event;
         httpRequest.post(url, data,
                          [](const std::string& response) {
                              std::cout << "Stateless Response: " << response << std::endl;
@@ -103,7 +105,7 @@ int main() {
     std::string password = "123456";
     SendLoginRequest(url, uuid, password);
 
-    SendStatelessRequest(url, session_token, "event");
+    SendStatelessRequest(url, uuid, session_token, "event");
     SendCommandsRequest(url, session_token);
 
     // todo review content type of http request (could be text/plain or application/json, or xml)
