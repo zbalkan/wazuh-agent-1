@@ -114,14 +114,25 @@ private:
     }
 
     void handleStateless() {
+        auto authHeader = req_["Authorization"];
+
+        if (authHeader.empty()) {
+            if (authHeader.find(bearerPrefix) != 0)
+            {
+                res_.result(http::status::unauthorized);
+                res_.body() = "Missing token";
+                return;
+            }
+        }
+
+        std::string token = authHeader.substr(7);
+
         auto body = req_.body();
         auto uuidPos = body.find(uuidKey);
-        auto tokenPos = body.find(tokenKey);
         auto eventPos = body.find(eventKey);
-        if (uuidPos != std::string::npos && tokenPos != std::string::npos) {
-            std::string uuid = body.substr(uuidPos + uuidKey.length(), tokenPos - uuidPos - uuidKey.length() - 1);
+        if (uuidPos != std::string::npos) {
+            std::string uuid = body.substr(uuidPos + uuidKey.length(), eventPos - uuidPos - uuidKey.length() - 1);
             std::cout << uuid << std::endl;
-            std::string token = body.substr(tokenPos + tokenKey.length(), eventPos - tokenPos - tokenKey.length() - 1);
             std::cout << token << std::endl;
 
             if (token == validTokens[uuid].token) {

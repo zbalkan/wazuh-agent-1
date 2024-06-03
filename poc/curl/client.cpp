@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include "HTTPRequest.hpp"
+#include "IURLRequest.hpp"
 
 #include "token.hpp"
 
@@ -58,16 +59,22 @@ void SendLoginRequest(const std::string& pUrl, const std::string& uuid, const st
 
 void SendStatelessRequest(const std::string& pUrl, const std::string& uuid, const std::string& token, const std::string& event) {
     try {
+        std::string authHeader = "Authorization: " + bearerPrefix + session_token;
+        auto HeadersWithToken = DEFAULT_HEADERS;
+        HeadersWithToken.insert(authHeader);
+
         HttpURL url {pUrl + "/stateless"};
         HTTPRequest& httpRequest = HTTPRequest::instance();
-        std::string data = uuidKey + uuid + "&" + tokenKey + token + "&" + eventKey + event;
+        std::string data = uuidKey + uuid + "&" + eventKey + event;
         httpRequest.post(url, data,
                          [](const std::string& response) {
                              std::cout << "Stateless Response: " << response << std::endl;
                          },
                          [](const std::string& error, const long code) {
                              std::cerr << "Stateless Request failed: " << error << " with code " << code << std::endl;
-                         });
+                         },
+                         "",
+                         HeadersWithToken);
     } catch (const std::exception& e) {
         std::cerr << "Exception: " << e.what() << std::endl;
     }
