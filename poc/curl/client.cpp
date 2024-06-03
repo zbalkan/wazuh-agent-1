@@ -126,8 +126,11 @@ int main() {
             std::string postData = "Hello, this is a POST request.";
             SendPostRequest(url, postData);
         }
+        else if (command == "cleartoken") {
+            session_token.clear();
+        }
         else {
-            std::cout << "Available commands: login, stateless, commands, get, post, exit\n" << std::endl;
+            std::cout << "Available commands: login, stateless, commands, get, post, cleartoken, exit\n" << std::endl;
         }
     }
 
