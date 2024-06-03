@@ -30,15 +30,21 @@ endif()
 
 find_package(OpenSSL REQUIRED)
 
+find_path(JWT_CPP_INCLUDE_DIRS "jwt-cpp/base.h" HINTS ${CMAKE_CURRENT_LIST_DIR}/../vcpkg/installed/${VCPKG_TARGET_TRIPLET}/include)
+
+
 include_directories(${CMAKE_SOURCE_DIR})
 
 
 add_subdirectory(wazuh-http-request)
 
-# Add the server executable
 add_executable(server server.cpp)
-target_link_libraries(server Boost::system ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto urlrequest)
-
-# Add the client executable
 add_executable(client client.cpp)
-target_link_libraries(client ${CURL_LIBRARIES} ${ZLIB_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto urlrequest)
+
+
+target_include_directories(server PRIVATE ${JWT_CPP_INCLUDE_DIRS})
+target_include_directories(client PRIVATE ${JWT_CPP_INCLUDE_DIRS})
+
+
+target_link_libraries(server Boost::system ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto urlrequest )
+target_link_libraries(client ${CURL_LIBRARIES} ${ZLIB_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto urlrequest )

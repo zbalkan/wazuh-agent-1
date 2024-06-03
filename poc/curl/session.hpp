@@ -98,7 +98,7 @@ private:
             std::cout << password << std::endl;
 
             if (verifyPassword(uuid, password)) {
-                std::string newToken = generateToken();
+                std::string newToken = createToken();
                 validTokens[uuid] = {newToken, std::time(nullptr) + 3600}; // 1 hour expiry
 
                 res_.result(http::status::ok);
@@ -116,16 +116,13 @@ private:
     void handleStateless() {
         auto authHeader = req_["Authorization"];
 
-        if (authHeader.empty()) {
-            if (authHeader.find(bearerPrefix) != 0)
-            {
-                res_.result(http::status::unauthorized);
-                res_.body() = "Missing token";
-                return;
-            }
+        if (authHeader.empty() || authHeader.find(bearerPrefix) == std::string::npos) {
+            res_.result(http::status::unauthorized);
+            res_.body() = "Missing token";
+            return;
         }
 
-        std::string token = authHeader.substr(7);
+        std::string token = authHeader.substr(bearerPrefix.length());
 
         auto body = req_.body();
         auto uuidPos = body.find(uuidKey);
@@ -135,7 +132,7 @@ private:
             std::cout << uuid << std::endl;
             std::cout << token << std::endl;
 
-            if (token == validTokens[uuid].token) {
+            if (token == validTokens[uuid].token && verifyToken(token)) {
                 res_.result(http::status::ok);
                 res_.body() = "Valid token";
             } else {
