@@ -92,25 +92,37 @@ void SendCommandsRequest(const std::string& pUrl, const std::string& token) {
 
 int main() {
     std::string url = "http://localhost:8080";
-
-    // Send a GET request
-    SendGetRequest(url);
-
-    // Send a POST request
-    std::string postData = "Hello, this is a POST request.";
-    SendPostRequest(url, postData);
-
-    // Send a login request
     std::string uuid = "agent_uuid";
     std::string password = "123456";
-    SendLoginRequest(url, uuid, password);
 
-    SendStatelessRequest(url, uuid, session_token, "event");
-    SendCommandsRequest(url, session_token);
+    std::string command;
+    while (true) {
+        std::cout << "> ";
+        std::getline(std::cin, command);
 
-    // todo review content type of http request (could be text/plain or application/json, or xml)
-    // ie Content-Type: text/xml; charset=utf-8
-    // check DEFAULT_HEADERS in IURLRequest.hpp
+        if (command == "exit") {
+            break;
+        }
+        else if (command == "login") {
+            SendLoginRequest(url, uuid, password);
+        }
+        else if (command == "stateless") {
+            SendStatelessRequest(url, uuid, session_token, command);
+        }
+        else if (command == "commands") {
+            SendCommandsRequest(url, session_token);
+        }
+        else if (command == "get") {
+            SendGetRequest(url);
+        }
+        else if (command == "post") {
+            std::string postData = "Hello, this is a POST request.";
+            SendPostRequest(url, postData);
+        }
+        else {
+            std::cout << "Available commands: login, stateless, commands, get, post, exit\n" << std::endl;
+        }
+    }
 
     return 0;
 }
