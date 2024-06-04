@@ -1,11 +1,27 @@
 #include <iostream>
 #include <string>
+#include <thread>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+#include <atomic>
+
 #include "HTTPRequest.hpp"
 #include "IURLRequest.hpp"
 
 #include "token.hpp"
 
 std::string session_token {};
+
+std::string url = "http://localhost:8080";
+std::string uuid = "agent_uuid";
+std::string password = "123456";
+
+std::queue<int> eventQueue;
+std::mutex queueMutex;
+std::condition_variable condition;
+std::atomic<bool> keepRunning(true);
+
 
 void SendGetRequest(const std::string& pUrl) {
     try {
@@ -97,10 +113,33 @@ void SendCommandsRequest(const std::string& pUrl, const std::string& token) {
     }
 }
 
+void eventDispatcher() {
+    while (keepRunning.load()) {
+        std::unique_lock<std::mutex> lock(queueMutex);
+        condition.wait(lock, [] { return !eventQueue.empty() || !keepRunning.load(); });
+
+        while (!eventQueue.empty()) {
+            int task = eventQueue.front();
+            eventQueue.pop();
+            lock.unlock();
+
+            std::string event = "event" + std::to_string(task);
+            SendStatelessRequest(url, uuid, session_token, event);
+
+            lock.lock();
+        }
+    }
+    std::cout << "Worker thread is exiting.\n";
+}
+
+void pushEvent(int task) {
+    std::lock_guard<std::mutex> lock(queueMutex);
+    eventQueue.push(task);
+    condition.notify_one();
+}
+
 int main() {
-    std::string url = "http://localhost:8080";
-    std::string uuid = "agent_uuid";
-    std::string password = "123456";
+    std::thread t(eventDispatcher);
 
     std::string command;
     while (true) {
@@ -108,6 +147,8 @@ int main() {
         std::getline(std::cin, command);
 
         if (command == "exit") {
+            keepRunning.store(false);
+            condition.notify_one();
             break;
         }
         else if (command == "login") {
@@ -129,10 +170,16 @@ int main() {
         else if (command == "cleartoken") {
             session_token.clear();
         }
+        else if (command == "createevent") {
+            static int task = 0;
+            pushEvent(task++);
+        }
         else {
-            std::cout << "Available commands: login, stateless, commands, get, post, cleartoken, exit\n" << std::endl;
+            std::cout << "Available commands: login, stateless, commands, get, post, cleartoken, createevent, exit\n" << std::endl;
         }
     }
 
+    t.join();
+    std::cout << "Main thread is exiting.\n";
     return 0;
 }
