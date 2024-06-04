@@ -35,6 +35,13 @@ public:
     }
 
 private:
+    void print_req() {
+        std::cout << "\033[2J\033[1;1H";
+        std::cout << std::endl;
+        std::cout << req_ << std::endl;
+        std::cout << std::endl;
+    }
+
     void do_read() {
         auto self = shared_from_this();
         http::async_read(socket_, buffer_, req_,
@@ -48,6 +55,7 @@ private:
     }
 
     void do_write() {
+        print_req();
         res_.version(req_.version());
         res_.keep_alive(req_.keep_alive());
         res_.set(http::field::server, "Boost.Beast");
@@ -93,9 +101,7 @@ private:
         auto passwordPos = body.find(passwordKey);
         if (uuidPos != std::string::npos && passwordPos != std::string::npos) {
             std::string uuid = body.substr(uuidPos + uuidKey.length(), passwordPos - uuidPos - uuidKey.length() - 1);
-            std::cout << uuid << std::endl;
             std::string password = body.substr(passwordPos + passwordKey.length());
-            std::cout << password << std::endl;
 
             if (verifyPassword(uuid, password)) {
                 std::string newToken = createToken();
@@ -129,8 +135,6 @@ private:
         auto eventPos = body.find(eventKey);
         if (uuidPos != std::string::npos) {
             std::string uuid = body.substr(uuidPos + uuidKey.length(), eventPos - uuidPos - uuidKey.length() - 1);
-            std::cout << uuid << std::endl;
-            std::cout << token << std::endl;
 
             if (token == validTokens[uuid].token && verifyToken(token)) {
                 res_.result(http::status::ok);
