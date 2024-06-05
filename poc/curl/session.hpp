@@ -38,10 +38,17 @@ public:
 
 private:
     void print_req() {
-        std::cout << "\033[2J\033[1;1H";
-        std::cout << std::endl;
+        auto now = std::chrono::system_clock::now();
+        std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+
+        auto endpoint = socket_.remote_endpoint();
+        std::string client_ip = endpoint.address().to_string();
+        unsigned short client_port = endpoint.port();
+
+        std::cout << "Timestamp: " << std::ctime(&now_time);
+        std::cout << "Client IP: " << client_ip << ":" << client_port << std::endl;
+        std::cout << "HTTP Request:" << std::endl;
         std::cout << req_ << std::endl;
-        std::cout << std::endl;
     }
 
     void do_read() {
@@ -57,6 +64,7 @@ private:
     }
 
     void do_write() {
+        std::cout << "==================== REQUEST START ====================\n";
         print_req();
         res_.version(req_.version());
         res_.keep_alive(req_.keep_alive());
@@ -100,6 +108,7 @@ private:
                     fail(ec, "write");
                 }
             });
+        std::cout << "==================== REQUEST END ======================\n\n";
     }
 
     void handleLogin() {
