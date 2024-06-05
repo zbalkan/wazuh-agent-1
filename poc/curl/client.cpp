@@ -10,6 +10,9 @@
 #include "IURLRequest.hpp"
 
 #include "token.hpp"
+#include "events.hpp"
+#include "db/sqlite_wrapper.hpp"
+#include "db/rocksdb_wrapper.hpp"
 
 std::string session_token {};
 
@@ -17,8 +20,8 @@ std::string url = "http://localhost:8080";
 std::string uuid = "agent_uuid";
 std::string password = "123456";
 
-std::queue<int> eventQueue;
-std::mutex queueMutex;
+// std::queue<int> eventQueue;
+// std::mutex queueMutex;
 std::condition_variable condition;
 std::atomic<bool> keepRunning(true);
 
@@ -129,34 +132,38 @@ void suscribeToCommands(const std::string& pUrl, const std::string& uuid, const 
     SendCommandsRequest(url, session_token);
 }
 
-void eventDispatcher() {
-    while (keepRunning.load()) {
-        std::unique_lock<std::mutex> lock(queueMutex);
-        condition.wait(lock, [] { return !eventQueue.empty() || !keepRunning.load(); });
-
-        while (!eventQueue.empty()) {
-            int task = eventQueue.front();
-            eventQueue.pop();
-            lock.unlock();
-
-            std::string event = "event" + std::to_string(task);
-            SendStatelessRequest(url, uuid, session_token, event);
-
-            lock.lock();
-        }
-    }
-    std::cout << "Worker thread is exiting.\n";
-}
-
-void pushEvent(int task) {
-    std::lock_guard<std::mutex> lock(queueMutex);
-    eventQueue.push(task);
-    condition.notify_one();
-}
+// void eventDispatcher() {
+//     while (keepRunning.load()) {
+//         std::unique_lock<std::mutex> lock(queueMutex);
+//         condition.wait(lock, [] { return !eventQueue.empty() || !keepRunning.load(); });
+//
+//         while (!eventQueue.empty()) {
+//             int task = eventQueue.front();
+//             eventQueue.pop();
+//             lock.unlock();
+//
+//             std::string event = "event" + std::to_string(task);
+//             SendStatelessRequest(url, uuid, session_token, event);
+//
+//             lock.lock();
+//         }
+//     }
+//     std::cout << "Worker thread is exiting.\n";
+// }
+//
+// void pushEvent(int task) {
+//     std::lock_guard<std::mutex> lock(queueMutex);
+//     eventQueue.push(task);
+//     condition.notify_one();
+// }
 
 int main() {
-    std::thread t(eventDispatcher);
+    // std::thread t(eventDispatcher);
     std::thread tCommands(suscribeToCommands, url, uuid, password);
+
+    EventsDb<SQLiteWrapper> eventsDb([&url, &uuid, &session_token](const std::string& event) {
+        SendStatelessRequest(url, uuid, session_token, event);
+    });
 
     std::string command;
     while (true) {
@@ -172,7 +179,7 @@ int main() {
             SendLoginRequest(url, uuid, password);
         }
         else if (command == "stateless") {
-            SendStatelessRequest(url, uuid, session_token, command);
+            SendStatelessRequest(url, uuid, session_token, "");
         }
         else if (command == "get") {
             SendGetRequest(url);
@@ -185,15 +192,16 @@ int main() {
             session_token.clear();
         }
         else if (command == "createevent") {
-            static int task = 0;
-            pushEvent(task++);
+            static int event = 0;
+            eventsDb.db->insertEvent(event++, "{\"key\": \"value\"}", "json");
+            eventsDb.db->insertEvent(event++, "<event><key>value</key></event>", "xml");
         }
         else {
             std::cout << "Available commands: login, stateless, commands, get, post, cleartoken, createevent, exit\n" << std::endl;
         }
     }
 
-    t.join();
+    // t.join();
     tCommands.join();
     std::cout << "Main thread is exiting.\n";
     return 0;

@@ -14,6 +14,13 @@ if(Boost_FOUND)
     link_directories(${Boost_LIBRARY_DIRS})
 endif()
 
+# Add SQLite3 library
+find_package(SQLite3 REQUIRED)
+include_directories(${SQLite3_INCLUDE_DIRS})
+
+set(RocksDB_DIR "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-linux/share/rocksdb")
+find_package(RocksDB REQUIRED)
+
 # Find libcurl
 find_package(CURL REQUIRED)
 if(CURL_FOUND)
@@ -32,19 +39,17 @@ find_package(OpenSSL REQUIRED)
 
 find_path(JWT_CPP_INCLUDE_DIRS "jwt-cpp/base.h" HINTS ${CMAKE_CURRENT_LIST_DIR}/../vcpkg/installed/${VCPKG_TARGET_TRIPLET}/include)
 
-
 include_directories(${CMAKE_SOURCE_DIR})
-
+include_directories(${CMAKE_SOURCE_DIR}/wazuh_shared)
+include_directories(${CMAKE_SOURCE_DIR}/external)
 
 add_subdirectory(wazuh-http-request)
 
 add_executable(server server.cpp)
 add_executable(client client.cpp)
 
-
 target_include_directories(server PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 target_include_directories(client PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 
-
-target_link_libraries(server Boost::system ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto urlrequest )
-target_link_libraries(client ${CURL_LIBRARIES} ${ZLIB_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto urlrequest )
+target_link_libraries(server Boost::system ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} ${SQLite3_LIBRARIES} RocksDB::rocksdb OpenSSL::SSL OpenSSL::Crypto urlrequest )
+target_link_libraries(client ${CURL_LIBRARIES} ${ZLIB_LIBRARIES} ${SQLite3_LIBRARIES} RocksDB::rocksdb OpenSSL::SSL OpenSSL::Crypto urlrequest )
