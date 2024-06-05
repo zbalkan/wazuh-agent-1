@@ -97,20 +97,36 @@ void SendStatelessRequest(const std::string& pUrl, const std::string& uuid, cons
 }
 
 void SendCommandsRequest(const std::string& pUrl, const std::string& token) {
-    try {
-        HttpURL url {pUrl + "/commands"};
-        HTTPRequest& httpRequest = HTTPRequest::instance();
-        std::string data = "token=" + token;
-        httpRequest.post(url, data,
-                         [](const std::string& response) {
-                             std::cout << "Commands Response: " << response << std::endl;
-                         },
-                         [](const std::string& error, const long code) {
-                             std::cerr << "Commands Request failed: " << error << " with code " << code << std::endl;
-                         });
-    } catch (const std::exception& e) {
-        std::cerr << "Exception: " << e.what() << std::endl;
+    while (keepRunning.load()) {
+        try {
+            std::string authHeader = "Authorization: " + bearerPrefix + token;
+            auto HeadersWithToken = DEFAULT_HEADERS;
+            HeadersWithToken.insert(authHeader);
+            auto needLogin = false;
+
+            HttpURL url {pUrl + "/commands" + "?" + uuidKey + uuid };
+            HTTPRequest& httpRequest = HTTPRequest::instance();
+            httpRequest.get(url,
+                            [](const std::string& response) {
+                                std::cout << "Commands Response: " << response << std::endl;
+                            },
+                            [pUrl, uuid, password](const std::string& error, const long code) {
+                                std::cerr << "Commands Request failed: " << error << " with code " << code << std::endl;
+                                if (code == 401) {
+                                    SendLoginRequest(pUrl, uuid, password);
+                                }
+                            },
+                            "",
+                            HeadersWithToken);
+        } catch (const std::exception& e) {
+            std::cerr << "Exception: " << e.what() << std::endl;
+        }
     }
+}
+
+void suscribeToCommands(const std::string& pUrl, const std::string& uuid, const std::string& password) {
+    SendLoginRequest(url, uuid, password);
+    SendCommandsRequest(url, session_token);
 }
 
 void eventDispatcher() {
@@ -140,6 +156,7 @@ void pushEvent(int task) {
 
 int main() {
     std::thread t(eventDispatcher);
+    std::thread tCommands(suscribeToCommands, url, uuid, password);
 
     std::string command;
     while (true) {
@@ -156,9 +173,6 @@ int main() {
         }
         else if (command == "stateless") {
             SendStatelessRequest(url, uuid, session_token, command);
-        }
-        else if (command == "commands") {
-            SendCommandsRequest(url, session_token);
         }
         else if (command == "get") {
             SendGetRequest(url);

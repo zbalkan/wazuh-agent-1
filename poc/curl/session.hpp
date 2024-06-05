@@ -6,6 +6,7 @@
 #include <boost/asio/strand.hpp>
 #include <boost/asio/signal_set.hpp>
 #include <boost/config.hpp>
+#include <boost/url.hpp>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -19,6 +20,7 @@
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace net = boost::asio;
+namespace urls = boost::urls;
 using tcp = net::ip::tcp;
 
 class session : public std::enable_shared_from_this<session> {
@@ -62,8 +64,13 @@ private:
         res_.set(http::field::content_type, "text/plain");
 
         if (req_.method() == http::verb::get) {
-            res_.result(http::status::ok);
-            res_.body() = "Hello, World!";
+            urls::url_view url_view(req_.target());
+            if (url_view.path() == "/commands") {
+                handleCommands();
+            } else {
+                res_.result(http::status::ok);
+                res_.body() = "Hello, World!";
+            }
         } else if (req_.method() == http::verb::post) {
             if (req_.target() == "/login") {
                 handleLogin();
@@ -146,6 +153,43 @@ private:
         } else {
             res_.result(http::status::bad_request);
             res_.body() = "Invalid request format";
+        }
+    }
+
+    void handleCommands() {
+        auto authHeader = req_["Authorization"];
+
+        if (authHeader.empty() || authHeader.find(bearerPrefix) == std::string::npos) {
+            res_.result(http::status::unauthorized);
+            res_.body() = "Missing token";
+            return;
+        }
+
+        std::string token = authHeader.substr(bearerPrefix.length());
+        urls::url_view url_view(req_.target());
+        std::string uuid;
+
+        if (url_view.has_query()) {
+            for (auto param : url_view.params()) {
+                if (param.key == "uuid") {
+                    uuid = std::string(param.value);
+                    break;
+                }
+            }
+        }
+
+        if (!uuid.empty()) {
+            if (token == validTokens[uuid].token && verifyToken(token)) {
+                std::cout << "Waiting for commands" << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(101));
+                res_.result(http::status::ok);
+                res_.body() = "Valid token";
+            } else {
+                res_.result(http::status::unauthorized);
+                res_.body() = "Invalid or expired token";
+            }
+        } else {
+            std::cout << "UUID not found in query parameters" << std::endl;
         }
     }
 };
