@@ -194,6 +194,7 @@ int main() {
     }
 
     t.join();
+    tCommands.join();
     std::cout << "Main thread is exiting.\n";
     return 0;
 }

@@ -181,7 +181,7 @@ private:
         if (!uuid.empty()) {
             if (token == validTokens[uuid].token && verifyToken(token)) {
                 std::cout << "Waiting for commands" << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(101));
+                std::this_thread::sleep_for(std::chrono::seconds(10));
                 res_.result(http::status::ok);
                 res_.body() = "Valid token";
             } else {
