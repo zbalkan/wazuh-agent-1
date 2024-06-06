@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <chrono>
 #include <ctime>
+#include <random>
 
 #include "defs.hpp"
 #include "token.hpp"
@@ -50,6 +51,20 @@ private:
         std::cout << "Client IP: " << client_ip << ":" << client_port << std::endl;
         std::cout << "HTTP Request:" << std::endl;
         std::cout << req_ << std::endl;
+    }
+
+    void print_res() {
+        auto now = std::chrono::system_clock::now();
+        std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+
+        auto endpoint = socket_.remote_endpoint();
+        std::string client_ip = endpoint.address().to_string();
+        unsigned short client_port = endpoint.port();
+
+        std::cout << "Timestamp: " << std::ctime(&now_time);
+        std::cout << "Client IP: " << client_ip << ":" << client_port << std::endl;
+        std::cout << "HTTP Response:" << std::endl;
+        std::cout << res_ << std::endl;
     }
 
     void do_read() {
@@ -99,6 +114,9 @@ private:
 
         res_.prepare_payload();
 
+        std::cout << "==================== REQUEST END ======================\n\n";
+        std::cout << "==================== RESPONSE START ===================\n";
+        print_res();
         auto self = shared_from_this();
         http::async_write(socket_, res_,
             [self](beast::error_code ec, std::size_t bytes_transferred) {
@@ -109,7 +127,7 @@ private:
                     fail(ec, "write");
                 }
             });
-        std::cout << "==================== REQUEST END ======================\n\n";
+        std::cout << "==================== RESPONSE END =====================\n\n";
     }
 
     void handleLogin() {
@@ -168,6 +186,10 @@ private:
 
     void handleCommands() {
         auto authHeader = req_["Authorization"];
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> distrib(0, 1);
+        int randomValue = distrib(gen);
 
         if (authHeader.empty() || authHeader.find(bearerPrefix) == std::string::npos) {
             res_.result(http::status::unauthorized);
@@ -190,10 +212,13 @@ private:
 
         if (!uuid.empty()) {
             if (token == validTokens[uuid].token && verifyToken(token)) {
-                std::cout << "Waiting for commands" << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(10));
-                res_.result(http::status::ok);
-                res_.body() = "Valid token";
+                if (randomValue == 0) {
+                    std::this_thread::sleep_for(std::chrono::seconds(10));
+                    res_.result(http::status::request_timeout);
+                } else {
+                    res_.result(http::status::ok);
+                    res_.body() = "Command to run";
+                }
             } else {
                 res_.result(http::status::unauthorized);
                 res_.body() = "Invalid or expired token";

@@ -97,7 +97,6 @@ void SendCommandsRequest(const std::string& pUrl, const std::string& uuid, const
             std::string authHeader = "Authorization: " + bearerPrefix + token;
             auto HeadersWithToken = DEFAULT_HEADERS;
             HeadersWithToken.insert(authHeader);
-            auto needLogin = false;
 
             HttpURL url {pUrl + "/commands" + "?" + uuidKey + uuid };
             HTTPRequest& httpRequest = HTTPRequest::instance();
