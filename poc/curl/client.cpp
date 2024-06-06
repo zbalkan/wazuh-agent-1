@@ -1,33 +1,26 @@
 #include <iostream>
 #include <string>
-#include <thread>
 
+#include "agent.hpp"
 #include "defs.hpp"
 #include "requests.hpp"
 #include "token.hpp"
 #include "events.hpp"
-#include "db/sqlite_wrapper.hpp"
-#include "db/rocksdb_wrapper.hpp"
 
 std::string session_token {};
 
 
-int main() {
-    std::thread tCommands([&kURL, &kUUID, &kPASSWORD, &session_token]() {
-        subscribeToCommands(kURL, kUUID, kPASSWORD, session_token);
-    });
-
-    EventsDb<SQLiteWrapper> eventsDb([&kURL, &kUUID, &session_token](const std::string& event) {
-        SendStatelessRequest(kURL, kUUID, session_token, event);
-    });
+int main()
+{
+    Agent agent(kURL, kUUID, kPASSWORD, session_token);
 
     std::string command;
+
     while (true) {
         std::cout << "> ";
         std::getline(std::cin, command);
 
         if (command == "exit") {
-            StopCommands();
             break;
         }
         else if (command == "login") {
@@ -48,15 +41,14 @@ int main() {
         }
         else if (command == "createevent") {
             static int event = 0;
-            eventsDb.db->insertEvent(event++, "{\"key\": \"value\"}", "json");
-            eventsDb.db->insertEvent(event++, "<event><key>value</key></event>", "xml");
+            agent.eventsDb->db->insertEvent(event++, "{\"key\": \"value\"}", "json");
+            agent.eventsDb->db->insertEvent(event++, "<event><key>value</key></event>", "xml");
         }
         else {
             std::cout << "Available commands: login, stateless, commands, get, post, cleartoken, createevent, exit\n" << std::endl;
         }
     }
 
-    tCommands.join();
     std::cout << "Main thread is exiting.\n";
     return 0;
 }

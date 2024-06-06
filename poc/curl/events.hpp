@@ -6,6 +6,7 @@
 #include <chrono>
 #include <thread>
 #include <functional>
+#include <atomic>
 
 std::atomic<bool> keepDbRunning(true);
 
