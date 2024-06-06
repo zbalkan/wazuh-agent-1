@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <thread>
-#include <queue>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
@@ -20,8 +19,6 @@ const std::string kURL = "http://localhost:8080";
 const std::string kUUID = "agent_uuid";
 const std::string kPASSWORD = "123456";
 
-// std::queue<int> eventQueue;
-// std::mutex queueMutex;
 std::condition_variable condition;
 std::atomic<bool> keepRunning(true);
 
@@ -132,33 +129,7 @@ void suscribeToCommands(const std::string& url, const std::string& uuid, const s
     SendCommandsRequest(url, uuid, password, token);
 }
 
-// void eventDispatcher() {
-//     while (keepRunning.load()) {
-//         std::unique_lock<std::mutex> lock(queueMutex);
-//         condition.wait(lock, [] { return !eventQueue.empty() || !keepRunning.load(); });
-//
-//         while (!eventQueue.empty()) {
-//             int task = eventQueue.front();
-//             eventQueue.pop();
-//             lock.unlock();
-//
-//             std::string event = "event" + std::to_string(task);
-//             SendStatelessRequest(url, uuid, session_token, event);
-//
-//             lock.lock();
-//         }
-//     }
-//     std::cout << "Worker thread is exiting.\n";
-// }
-//
-// void pushEvent(int task) {
-//     std::lock_guard<std::mutex> lock(queueMutex);
-//     eventQueue.push(task);
-//     condition.notify_one();
-// }
-
 int main() {
-    // std::thread t(eventDispatcher);
     std::thread tCommands([&kURL, &kUUID, &kPASSWORD, &session_token]() {
         suscribeToCommands(kURL, kUUID, kPASSWORD, session_token);
     });
@@ -203,7 +174,6 @@ int main() {
         }
     }
 
-    // t.join();
     tCommands.join();
     std::cout << "Main thread is exiting.\n";
     return 0;
