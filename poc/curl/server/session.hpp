@@ -173,7 +173,7 @@ private:
 
             if (token == validTokens[uuid].token && verifyToken(token)) {
                 res_.result(http::status::ok);
-                res_.body() = "Valid token";
+                res_.body() = "Stateless post request received";
             } else {
                 res_.result(http::status::unauthorized);
                 res_.body() = "Invalid or expired token";
