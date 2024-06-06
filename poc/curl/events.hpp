@@ -15,7 +15,16 @@ void dispatcher(DB* dbWrapper, std::function<void(const std::string&)> onEvent) 
     const int N = 10;  // Number of events to dispatch at once
     const int T = 5;   // Time interval in seconds
 
+    auto last_dispatch_time = std::chrono::steady_clock::now();
+
     while (keepDbRunning.load()) {
+        const auto current_time = std::chrono::steady_clock::now();
+
+        if (dbWrapper->getPendingEventCount() < N && std::chrono::duration_cast<std::chrono::seconds>(current_time - last_dispatch_time).count() < T) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            continue;
+        }
+
         auto pending_events = dbWrapper->fetchPendingEvents(N);
         if (!pending_events.empty()) {
             // Dispatch logic here
@@ -30,7 +39,7 @@ void dispatcher(DB* dbWrapper, std::function<void(const std::string&)> onEvent) 
             onEvent(event_data);
             dbWrapper->updateEventStatus(event_ids);
         }
-        std::this_thread::sleep_for(std::chrono::seconds(T));
+        last_dispatch_time = current_time;
     }
 }
 
