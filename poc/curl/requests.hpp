@@ -118,10 +118,6 @@ void SendCommandsRequest(const std::string& pUrl, const std::string& uuid, const
     }
 }
 
-void subscribeToCommands(const std::string& url, const std::string& uuid, const std::string& password, std::string& token) {
-    SendCommandsRequest(url, uuid, password, token);
-}
-
 void StopCommands() {
     keepRunning.store(false);
     condition.notify_one();

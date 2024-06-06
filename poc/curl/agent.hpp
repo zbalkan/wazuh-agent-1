@@ -21,7 +21,7 @@ struct Agent
         tCommands = std::make_unique<std::thread>(
             [&url, &uuid, &password, &token] ()
             {
-                subscribeToCommands(url, uuid, password, token);
+                SendCommandsRequest(url, uuid, password, token);
             }
         );
 
