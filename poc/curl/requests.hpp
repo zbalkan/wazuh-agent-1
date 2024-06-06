@@ -119,7 +119,6 @@ void SendCommandsRequest(const std::string& pUrl, const std::string& uuid, const
 }
 
 void subscribeToCommands(const std::string& url, const std::string& uuid, const std::string& password, std::string& token) {
-    SendLoginRequest(url, uuid, password, token);
     SendCommandsRequest(url, uuid, password, token);
 }
 

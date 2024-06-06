@@ -14,6 +14,9 @@ struct Agent
 {
     Agent(const std::string& url, const std::string& uuid, const std::string& password, std::string& token)
     {
+        // Login to get new token
+        SendLoginRequest(url, uuid, password, token);
+
         // Start commands thread
         tCommands = std::make_unique<std::thread>(
             [&url, &uuid, &password, &token] ()
