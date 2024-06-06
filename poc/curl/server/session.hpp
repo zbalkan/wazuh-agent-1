@@ -102,7 +102,7 @@ private:
                 handleStateless();
             } else if (req_.target() == "/commands") {
                 res_.result(http::status::ok);
-                res_.body() = "Received commands request";
+                res_.body() = "Received commands post request";
             } else {
                 res_.result(http::status::ok);
                 res_.body() = "Received: " + req_.body();
