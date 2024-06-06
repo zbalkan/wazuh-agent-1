@@ -29,6 +29,9 @@ int main()
         else if (command == "stateless") {
             SendStatelessRequest(kURL, kUUID, session_token, "");
         }
+        else if (command == "stopcommands") {
+            StopCommands();
+        }
         else if (command == "get") {
             SendGetRequest(kURL);
         }
@@ -45,7 +48,7 @@ int main()
             agent.eventsDb->db->insertEvent(event++, "<event><key>value</key></event>", "xml");
         }
         else {
-            std::cout << "Available commands: login, stateless, commands, get, post, cleartoken, createevent, exit\n" << std::endl;
+            std::cout << "Available commands: login, stateless, stopcommands, get, post, cleartoken, createevent, exit\n" << std::endl;
         }
     }
 
