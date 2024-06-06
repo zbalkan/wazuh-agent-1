@@ -58,15 +58,15 @@ void SendPostRequest(const std::string& pUrl, const std::string& data) {
     }
 }
 
-void SendLoginRequest(const std::string& pUrl, const std::string& uuid, const std::string& password) {
+void SendLoginRequest(const std::string& pUrl, const std::string& uuid, const std::string& password, std::string& token) {
     try {
         HttpURL url {pUrl + "/login"};
         HTTPRequest& httpRequest = HTTPRequest::instance();
         std::string data = uuidKey + uuid + "&" + passwordKey + password;
         httpRequest.post(url, data,
-                         [](const std::string& response) {
+                         [&token](const std::string& response) {
                             std::cout << "Login Response: " << response << std::endl;
-                            session_token = response;
+                            token = response;
                          },
                          [](const std::string& error, const long code) {
                              std::cerr << "Login Request failed: " << error << " with code " << code << std::endl;
@@ -78,7 +78,7 @@ void SendLoginRequest(const std::string& pUrl, const std::string& uuid, const st
 
 void SendStatelessRequest(const std::string& pUrl, const std::string& uuid, const std::string& token, const std::string& event) {
     try {
-        std::string authHeader = "Authorization: " + bearerPrefix + session_token;
+        std::string authHeader = "Authorization: " + bearerPrefix + token;
         auto HeadersWithToken = DEFAULT_HEADERS;
         HeadersWithToken.insert(authHeader);
 
@@ -99,7 +99,7 @@ void SendStatelessRequest(const std::string& pUrl, const std::string& uuid, cons
     }
 }
 
-void SendCommandsRequest(const std::string& pUrl, const std::string& uuid, const std::string& password, const std::string& token) {
+void SendCommandsRequest(const std::string& pUrl, const std::string& uuid, const std::string& password, std::string& token) {
     while (keepRunning.load()) {
         try {
             std::string authHeader = "Authorization: " + bearerPrefix + token;
@@ -113,10 +113,10 @@ void SendCommandsRequest(const std::string& pUrl, const std::string& uuid, const
                             [](const std::string& response) {
                                 std::cout << "Commands Response: " << response << std::endl;
                             },
-                            [pUrl, uuid, password](const std::string& error, const long code) {
+                            [pUrl, uuid, password, &token](const std::string& error, const long code) {
                                 std::cerr << "Commands Request failed: " << error << " with code " << code << std::endl;
                                 if (code == 401) {
-                                    SendLoginRequest(pUrl, uuid, password);
+                                    SendLoginRequest(pUrl, uuid, password, token);
                                 }
                             },
                             "",
@@ -127,9 +127,9 @@ void SendCommandsRequest(const std::string& pUrl, const std::string& uuid, const
     }
 }
 
-void suscribeToCommands(const std::string& url, const std::string& uuid, const std::string& password) {
-    SendLoginRequest(url, uuid, password);
-    SendCommandsRequest(url, uuid, password, session_token);
+void suscribeToCommands(const std::string& url, const std::string& uuid, const std::string& password, std::string& token) {
+    SendLoginRequest(url, uuid, password, token);
+    SendCommandsRequest(url, uuid, password, token);
 }
 
 // void eventDispatcher() {
@@ -159,7 +159,9 @@ void suscribeToCommands(const std::string& url, const std::string& uuid, const s
 
 int main() {
     // std::thread t(eventDispatcher);
-    std::thread tCommands(suscribeToCommands, kURL, kUUID, kPASSWORD);
+    std::thread tCommands([&kURL, &kUUID, &kPASSWORD, &session_token]() {
+        suscribeToCommands(kURL, kUUID, kPASSWORD, session_token);
+    });
 
     EventsDb<SQLiteWrapper> eventsDb([&kURL, &kUUID, &session_token](const std::string& event) {
         SendStatelessRequest(kURL, kUUID, session_token, event);
@@ -176,7 +178,7 @@ int main() {
             break;
         }
         else if (command == "login") {
-            SendLoginRequest(kURL, kUUID, kPASSWORD);
+            SendLoginRequest(kURL, kUUID, kPASSWORD, session_token);
         }
         else if (command == "stateless") {
             SendStatelessRequest(kURL, kUUID, session_token, "");
