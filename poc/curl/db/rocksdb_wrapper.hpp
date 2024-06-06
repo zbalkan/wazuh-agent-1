@@ -63,6 +63,19 @@ public:
         }
     }
 
+    int getPendingEventCount() override {
+        int count = 0;
+        auto it = db->NewIterator(rocksdb::ReadOptions());
+        for (it->SeekToFirst(); it->Valid(); it->Next()) {
+            Event event = deserializeEvent(it->value().ToString());
+            if (event.status == "pending") {
+                ++count;
+            }
+        }
+        delete it;
+        return count;
+    }
+
 private:
     rocksdb::DB* db = nullptr;
 

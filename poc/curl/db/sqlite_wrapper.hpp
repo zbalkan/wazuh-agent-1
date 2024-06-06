@@ -77,6 +77,19 @@ public:
         sqlite3_finalize(stmt);
     }
 
+    int getPendingEventCount() override {
+        const char* sql = "SELECT COUNT(*) FROM events WHERE status = 'pending';";
+        sqlite3_stmt* stmt;
+        sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+
+        int count = 0;
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            count = sqlite3_column_int(stmt, 0);
+        }
+        sqlite3_finalize(stmt);
+        return count;
+    }
+
 private:
     sqlite3* db = nullptr;
 };
