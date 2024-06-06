@@ -17,7 +17,7 @@ const std::string kPASSWORD = "123456";
 
 int main() {
     std::thread tCommands([&kURL, &kUUID, &kPASSWORD, &session_token]() {
-        suscribeToCommands(kURL, kUUID, kPASSWORD, session_token);
+        subscribeToCommands(kURL, kUUID, kPASSWORD, session_token);
     });
 
     EventsDb<SQLiteWrapper> eventsDb([&kURL, &kUUID, &session_token](const std::string& event) {
