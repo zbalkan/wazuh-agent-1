@@ -25,6 +25,7 @@ void dispatcher(DB* dbWrapper, std::function<void(const std::string&)> onEvent) 
                 std::cout << "Dispatching event ID: " << event.id << ", Data: " << event.event_data << std::endl;
                 event_ids.push_back(event.id);
                 event_data += event.event_data;
+                event_data += "\n";
             }
             onEvent(event_data);
             dbWrapper->updateEventStatus(event_ids);
