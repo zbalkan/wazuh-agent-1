@@ -14,6 +14,7 @@
 #include <chrono>
 #include <ctime>
 
+#include "defs.hpp"
 #include "session.hpp"
 #include "token.hpp"
 

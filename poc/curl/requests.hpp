@@ -10,6 +10,7 @@
 #include "HTTPRequest.hpp"
 #include "IURLRequest.hpp"
 
+#include "defs.hpp"
 #include "token.hpp"
 
 

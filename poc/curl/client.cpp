@@ -2,6 +2,7 @@
 #include <string>
 #include <thread>
 
+#include "defs.hpp"
 #include "requests.hpp"
 #include "token.hpp"
 #include "events.hpp"
@@ -9,10 +10,6 @@
 #include "db/rocksdb_wrapper.hpp"
 
 std::string session_token {};
-
-const std::string kURL = "http://localhost:8080";
-const std::string kUUID = "agent_uuid";
-const std::string kPASSWORD = "123456";
 
 
 int main() {

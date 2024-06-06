@@ -15,6 +15,7 @@
 #include <chrono>
 #include <ctime>
 
+#include "defs.hpp"
 #include "token.hpp"
 
 namespace beast = boost::beast;

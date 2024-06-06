@@ -1,6 +1,5 @@
 #pragma once
 
-#include <boost/beast/core.hpp>
 #include <jwt-cpp/jwt.h>
 
 #include <string>
@@ -8,15 +7,6 @@
 #include <chrono>
 #include <ctime>
 
-const std::string uuidKey = "uuid=";
-const std::string tokenKey = "token=";
-const std::string eventKey = "event=";
-const std::string passwordKey = "password=";
-const std::string bearerPrefix = "Bearer ";
-
-void fail(boost::beast::error_code ec, char const* what) {
-    std::cerr << what << ": " << ec.message() << "\n";
-}
 
 struct TokenInfo {
     std::string token;
