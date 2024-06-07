@@ -27,7 +27,6 @@ void dispatcher(DB* dbWrapper, std::function<bool(const std::string&)> onEvent) 
 
         auto pending_events = dbWrapper->fetchAndMarkPendingEvents(N);
         if (!pending_events.empty()) {
-            // Dispatch logic here
             std::vector<int> event_ids;
             std::string event_data;
             for (const auto& event : pending_events) {
