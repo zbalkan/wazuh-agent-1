@@ -20,5 +20,6 @@ public:
     virtual std::vector<Event> fetchPendingEvents(int limit) = 0;
     virtual std::vector<Event> fetchAndMarkPendingEvents(int limit) = 0;
     virtual void updateEventStatus(const std::vector<int>& event_ids, const std::string& status) = 0;
+    virtual void deleteEntriesWithStatus(const std::string& status) = 0;
     virtual int getPendingEventCount() = 0;
 };

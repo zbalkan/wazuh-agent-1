@@ -80,6 +80,19 @@ public:
         }
     }
 
+    void deleteEntriesWithStatus(const std::string& status) override {
+        rocksdb::WriteBatch batch;
+        auto it = db->NewIterator(rocksdb::ReadOptions());
+        for (it->SeekToFirst(); it->Valid(); it->Next()) {
+            Event event = deserializeEvent(it->value().ToString());
+            if (event.status == status) {
+                batch.Delete(it->key());
+            }
+        }
+        db->Write(rocksdb::WriteOptions(), &batch);
+        delete it;
+    }
+
     int getPendingEventCount() override {
         int count = 0;
         auto it = db->NewIterator(rocksdb::ReadOptions());
