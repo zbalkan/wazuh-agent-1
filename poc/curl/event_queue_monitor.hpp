@@ -45,6 +45,22 @@ struct EventQueueMonitor
 
         while (keepDbRunning.load())
         {
+            auto it = std::remove_if(
+                eventDispatchThreads.begin(),
+                eventDispatchThreads.end(),
+                [] (std::thread &t)
+                {
+                    if (t.joinable())
+                    {
+                        t.join();
+                        return true;
+                    }
+                    return false;
+                }
+            );
+
+            eventDispatchThreads.erase(it, eventDispatchThreads.end());
+
             const auto current_time = std::chrono::steady_clock::now();
 
             if (eventQueue->getPendingEventCount() < N && std::chrono::duration_cast<std::chrono::seconds>(current_time - last_dispatch_time).count() < T)
