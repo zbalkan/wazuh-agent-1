@@ -39,7 +39,11 @@ void dispatcher(DB* dbWrapper, std::function<bool(const std::string&)> onEvent) 
 
             if (onEvent(event_data))
             {
-                dbWrapper->updateEventStatus(event_ids);
+                dbWrapper->updateEventStatus(event_ids, "dispatched");
+            }
+            else
+            {
+                dbWrapper->updateEventStatus(event_ids, "pending");
             }
         }
         last_dispatch_time = current_time;

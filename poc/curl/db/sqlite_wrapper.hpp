@@ -92,10 +92,10 @@ public:
         return events;
     }
 
-    void updateEventStatus(const std::vector<int>& event_ids) override {
-        const char* sql = "UPDATE events SET status = 'dispatched' WHERE id = ?;";
+    void updateEventStatus(const std::vector<int>& event_ids, const std::string& status) override {
+        const std::string sql = "UPDATE events SET status = '" + status + "' WHERE id = ?;";
         sqlite3_stmt* stmt;
-        sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+        sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
 
         for (int id : event_ids) {
             sqlite3_bind_int(stmt, 1, id);

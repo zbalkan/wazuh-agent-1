@@ -69,13 +69,13 @@ public:
         return events;
     }
 
-    void updateEventStatus(const std::vector<int>& event_ids) override {
+    void updateEventStatus(const std::vector<int>& event_ids, const std::string& status) override {
         for (int id : event_ids) {
             std::string key = std::to_string(id);
             std::string value;
             db->Get(rocksdb::ReadOptions(), key, &value);
             Event event = deserializeEvent(value);
-            event.status = "dispatched";
+            event.status = status;
             db->Put(rocksdb::WriteOptions(), key, serializeEvent(event));
         }
     }
