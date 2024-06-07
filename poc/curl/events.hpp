@@ -11,7 +11,7 @@
 std::atomic<bool> keepDbRunning(true);
 
 template <typename DB>
-void dispatcher(DB* dbWrapper, std::function<void(const std::string&)> onEvent) {
+void dispatcher(DB* dbWrapper, std::function<bool(const std::string&)> onEvent) {
     const int N = 10;  // Number of events to dispatch at once
     const int T = 5;   // Time interval in seconds
 
@@ -36,8 +36,11 @@ void dispatcher(DB* dbWrapper, std::function<void(const std::string&)> onEvent) 
                 event_data += event.event_data;
                 event_data += "\n";
             }
-            onEvent(event_data);
-            dbWrapper->updateEventStatus(event_ids);
+
+            if (onEvent(event_data))
+            {
+                dbWrapper->updateEventStatus(event_ids);
+            }
         }
         last_dispatch_time = current_time;
     }
@@ -46,7 +49,7 @@ void dispatcher(DB* dbWrapper, std::function<void(const std::string&)> onEvent) 
 template <typename DB>
 struct EventsDb
 {
-    EventsDb(std::function<void(const std::string&)> pOnEvent)
+    EventsDb(std::function<bool(const std::string&)> pOnEvent)
     : onEvent(pOnEvent)
     {
         db = std::make_unique<DB>();
@@ -66,5 +69,5 @@ struct EventsDb
 
     std::unique_ptr<std::thread> dispatcher_thread;
     std::unique_ptr<DB> db;
-    std::function<void(const std::string&)> onEvent;
+    std::function<bool(const std::string&)> onEvent;
 };

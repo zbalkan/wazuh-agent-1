@@ -29,7 +29,7 @@ struct Agent
         eventsDb = std::make_unique<EventsDb<SQLiteWrapper>>(
             [&url, &uuid, &token] (const std::string& event)
             {
-                SendStatelessRequest(url, uuid, token, event);
+                return SendStatelessRequest(url, uuid, token, event);
             }
         );
     }

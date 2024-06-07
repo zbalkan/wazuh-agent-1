@@ -68,7 +68,7 @@ void SendLoginRequest(const std::string& pUrl, const std::string& uuid, const st
     }
 }
 
-void SendStatelessRequest(const std::string& pUrl, const std::string& uuid, const std::string& token, const std::string& event) {
+bool SendStatelessRequest(const std::string& pUrl, const std::string& uuid, const std::string& token, const std::string& event) {
     try {
         std::string authHeader = "Authorization: " + bearerPrefix + token;
         auto HeadersWithToken = DEFAULT_HEADERS;
@@ -77,17 +77,22 @@ void SendStatelessRequest(const std::string& pUrl, const std::string& uuid, cons
         HttpURL url {pUrl + "/stateless"};
         HTTPRequest& httpRequest = HTTPRequest::instance();
         std::string data = uuidKey + uuid + "&" + eventKey + event;
+        bool success = false;
         httpRequest.post(url, data,
-                         [](const std::string& response) {
-                             std::cout << "Stateless Response: " << response << std::endl;
+                         [&success](const std::string& response) {
+                            std::cout << "Stateless Response: " << response << std::endl;
+                            success = true;
                          },
-                         [](const std::string& error, const long code) {
-                             std::cerr << "Stateless Request failed: " << error << " with code " << code << std::endl;
+                         [&success](const std::string& error, const long code) {
+                            std::cerr << "Stateless Request failed: " << error << " with code " << code << std::endl;
+                            success = false;
                          },
                          "",
                          HeadersWithToken);
+        return success;
     } catch (const std::exception& e) {
         std::cerr << "Exception: " << e.what() << std::endl;
+        return false;
     }
 }
 
