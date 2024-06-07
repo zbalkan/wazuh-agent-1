@@ -16,6 +16,8 @@ struct EventQueueMonitor
     {
         eventQueue = std::make_unique<QueueDB>();
         eventQueue->createTable();
+        eventQueue->updateEntriesStatus("processing", "pending");
+
         std::cout << "Starting event queue thread\n";
         dispatcher_thread = std::make_unique<std::thread>([this, onEvent] () { dispatcher(onEvent); });
     }
