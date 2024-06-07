@@ -52,8 +52,7 @@ void dispatcher(DB* dbWrapper, std::function<bool(const std::string&)> onEvent) 
 template <typename QueueDB>
 struct EventQueueMonitor
 {
-    EventQueueMonitor(std::function<bool(const std::string&)> pOnEvent)
-    : onEvent(pOnEvent)
+    EventQueueMonitor(std::function<bool(const std::string&)> onEvent)
     {
         eventQueue = std::make_unique<QueueDB>();
         eventQueue->createTable();
@@ -72,5 +71,4 @@ struct EventQueueMonitor
 
     std::unique_ptr<std::thread> dispatcher_thread;
     std::unique_ptr<QueueDB> eventQueue;
-    std::function<bool(const std::string&)> onEvent;
 };
