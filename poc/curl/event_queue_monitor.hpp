@@ -46,6 +46,8 @@ struct EventQueueMonitor
 
         while (keepDbRunning.load())
         {
+            eventQueue->deleteEntriesWithStatus("dispatched");
+
             auto it = std::remove_if(
                 eventDispatchThreads.begin(),
                 eventDispatchThreads.end(),
