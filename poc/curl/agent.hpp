@@ -1,6 +1,6 @@
 #pragma once
 
-#include "events.hpp"
+#include "event_queue_monitor.hpp"
 #include "requests.hpp"
 #include "db/sqlite_wrapper.hpp"
 #include "db/rocksdb_wrapper.hpp"
@@ -26,7 +26,7 @@ struct Agent
         );
 
         // Start events db
-        eventsDb = std::make_unique<EventsDb<SQLiteWrapper>>(
+        eventQueueMonitor = std::make_unique<EventQueueMonitor<SQLiteWrapper>>(
             [&url, &uuid, &token] (const std::string& event)
             {
                 return SendStatelessRequest(url, uuid, token, event);
@@ -42,5 +42,5 @@ struct Agent
     }
 
     std::unique_ptr<std::thread> tCommands;
-    std::unique_ptr<EventsDb<SQLiteWrapper>> eventsDb;
+    std::unique_ptr<EventQueueMonitor<SQLiteWrapper>> eventQueueMonitor;
 };

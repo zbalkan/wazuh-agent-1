@@ -50,28 +50,28 @@ void dispatcher(DB* dbWrapper, std::function<bool(const std::string&)> onEvent) 
     }
 }
 
-template <typename DB>
-struct EventsDb
+template <typename QueueDB>
+struct EventQueueMonitor
 {
-    EventsDb(std::function<bool(const std::string&)> pOnEvent)
+    EventQueueMonitor(std::function<bool(const std::string&)> pOnEvent)
     : onEvent(pOnEvent)
     {
-        db = std::make_unique<DB>();
-        db->createTable();
-        std::cout << "Starting event db thread\n";
-        dispatcher_thread = std::make_unique<std::thread>(dispatcher<DB>, db.get(), onEvent);
+        eventQueue = std::make_unique<QueueDB>();
+        eventQueue->createTable();
+        std::cout << "Starting event eventQueue thread\n";
+        dispatcher_thread = std::make_unique<std::thread>(dispatcher<QueueDB>, eventQueue.get(), onEvent);
     }
 
-    ~EventsDb()
+    ~EventQueueMonitor()
     {
         keepDbRunning.store(false);
-        std::cout << "Waiting for event db thread to join\n";
+        std::cout << "Waiting for event eventQueue thread to join\n";
         dispatcher_thread->join();
         dispatcher_thread.reset();
-        db.reset();
+        eventQueue.reset();
     }
 
     std::unique_ptr<std::thread> dispatcher_thread;
-    std::unique_ptr<DB> db;
+    std::unique_ptr<QueueDB> eventQueue;
     std::function<bool(const std::string&)> onEvent;
 };
