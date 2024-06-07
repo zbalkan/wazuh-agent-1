@@ -25,7 +25,7 @@ struct Client
             }
         );
 
-        // Start events db
+        // Start queue monitoring
         eventQueueMonitor = std::make_unique<EventQueueMonitor<SQLiteWrapper>>(
             [&url, &uuid, &token] (const std::string& event)
             {
