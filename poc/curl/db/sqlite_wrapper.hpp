@@ -64,6 +64,34 @@ public:
         return events;
     }
 
+    std::vector<Event> fetchAndMarkPendingEvents(int limit) override {
+        const char* select_sql = "SELECT id, event_data FROM events WHERE status = 'pending' LIMIT ?;";
+        const char* update_sql = "UPDATE events SET status = 'processing' WHERE id = ?;";
+
+        sqlite3_stmt* select_stmt;
+        sqlite3_stmt* update_stmt;
+        sqlite3_prepare_v2(db, select_sql, -1, &select_stmt, nullptr);
+        sqlite3_prepare_v2(db, update_sql, -1, &update_stmt, nullptr);
+        sqlite3_bind_int(select_stmt, 1, limit);
+
+        sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
+
+        std::vector<Event> events;
+        while (sqlite3_step(select_stmt) == SQLITE_ROW) {
+            int id = sqlite3_column_int(select_stmt, 0);
+            const unsigned char* event_data = sqlite3_column_text(select_stmt, 1);
+            events.emplace_back(Event{id, std::string(reinterpret_cast<const char*>(event_data)), "", "processing"});
+            sqlite3_bind_int(update_stmt, 1, id);
+            sqlite3_step(update_stmt);
+            sqlite3_reset(update_stmt);
+        }
+
+        sqlite3_exec(db, "END TRANSACTION;", nullptr, nullptr, nullptr);
+        sqlite3_finalize(select_stmt);
+        sqlite3_finalize(update_stmt);
+        return events;
+    }
+
     void updateEventStatus(const std::vector<int>& event_ids) override {
         const char* sql = "UPDATE events SET status = 'dispatched' WHERE id = ?;";
         sqlite3_stmt* stmt;

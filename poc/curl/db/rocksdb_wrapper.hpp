@@ -52,6 +52,23 @@ public:
         return events;
     }
 
+    std::vector<Event> fetchAndMarkPendingEvents(int limit) override {
+        std::vector<Event> events;
+        rocksdb::WriteBatch batch;
+        auto it = db->NewIterator(rocksdb::ReadOptions());
+        for (it->SeekToFirst(); it->Valid() && events.size() < limit; it->Next()) {
+            Event event = deserializeEvent(it->value().ToString());
+            if (event.status == "pending") {
+                event.status = "processing";
+                events.push_back(event);
+                batch.Put(it->key(), serializeEvent(event));
+            }
+        }
+        rocksdb::Status s = db->Write(rocksdb::WriteOptions(), &batch);
+        delete it;
+        return events;
+    }
+
     void updateEventStatus(const std::vector<int>& event_ids) override {
         for (int id : event_ids) {
             std::string key = std::to_string(id);
