@@ -23,7 +23,7 @@ struct EventQueueMonitor
     ~EventQueueMonitor()
     {
         keepDbRunning.store(false);
-        std::cout << "Waiting for event queue thread to join\n";
+        std::cout << "Waiting for event queue thread to join...";
         for (auto& thread : eventDispatchThreads)
         {
             if (thread.joinable())
@@ -34,6 +34,7 @@ struct EventQueueMonitor
         dispatcher_thread->join();
         dispatcher_thread.reset();
         eventQueue.reset();
+        std::cout << "done.\n";
     }
 
     void dispatcher(std::function<bool(const std::string&)> onEvent)
