@@ -58,14 +58,14 @@ struct EventQueueMonitor
     {
         eventQueue = std::make_unique<QueueDB>();
         eventQueue->createTable();
-        std::cout << "Starting event eventQueue thread\n";
+        std::cout << "Starting event queue thread\n";
         dispatcher_thread = std::make_unique<std::thread>(dispatcher<QueueDB>, eventQueue.get(), onEvent);
     }
 
     ~EventQueueMonitor()
     {
         keepDbRunning.store(false);
-        std::cout << "Waiting for event eventQueue thread to join\n";
+        std::cout << "Waiting for event queue thread to join\n";
         dispatcher_thread->join();
         dispatcher_thread.reset();
         eventQueue.reset();
