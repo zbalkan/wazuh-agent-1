@@ -118,6 +118,20 @@ public:
         sqlite3_finalize(stmt);
     }
 
+    void updateEntriesStatus(const std::string& from_status, const std::string& to_status) override {
+        const char* sql = "UPDATE events SET status = ? WHERE status = ?;";
+        sqlite3_stmt* stmt;
+        sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+        sqlite3_bind_text(stmt, 1, to_status.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_text(stmt, 2, from_status.c_str(), -1, SQLITE_STATIC);
+
+        sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
+        sqlite3_step(stmt);
+        sqlite3_exec(db, "END TRANSACTION;", nullptr, nullptr, nullptr);
+
+        sqlite3_finalize(stmt);
+    }
+
     int getPendingEventCount() override {
         const char* sql = "SELECT COUNT(*) FROM events WHERE status = 'pending';";
         sqlite3_stmt* stmt;
