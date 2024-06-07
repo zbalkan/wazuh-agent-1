@@ -10,9 +10,9 @@
 #include <thread>
 
 
-struct Agent
+struct Client
 {
-    Agent(const std::string& url, const std::string& uuid, const std::string& password, std::string& token)
+    Client(const std::string& url, const std::string& uuid, const std::string& password, std::string& token)
     {
         // Login to get new token
         SendLoginRequest(url, uuid, password, token);
@@ -34,7 +34,7 @@ struct Agent
         );
     }
 
-    ~Agent()
+    ~Client()
     {
         // Stop commands thread
         StopCommands();
