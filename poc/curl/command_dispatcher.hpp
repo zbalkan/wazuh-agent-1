@@ -54,6 +54,7 @@ struct CommandDispatcher
                 std::cout << "Dispatching command ID: " << pending_command.id << ", Data: " << pending_command.command_data << std::endl;
                 commandDb->updateCommandStatus(pending_command.id);
             }
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     }
 
