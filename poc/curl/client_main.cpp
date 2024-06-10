@@ -3,64 +3,25 @@
 
 #include "client.hpp"
 #include "defs.hpp"
-#include "event_queue_monitor.hpp"
 #include "logger.hpp"
-#include "requests.hpp"
 #include "token.hpp"
-
+#include "unix_socket_handler.hpp"
 
 int main()
 {
     Client client(kURL, kUUID, kPASSWORD, session_token);
 
-    std::string command;
-
-    while (true)
+    try
     {
-        std::cout << "> ";
-        std::getline(std::cin, command);
+        boost::asio::io_context ioc;
 
-        if (command == "exit")
-        {
-            break;
-        }
-        else if (command == "login")
-        {
-            SendLoginRequest(kURL, kUUID, kPASSWORD, session_token);
-        }
-        else if (command == "stateless")
-        {
-            SendStatelessRequest(kURL, kUUID, session_token, "");
-        }
-        else if (command == "stopcommands")
-        {
-            client.commandDispatcher->keepCommandDispatcherRunning.store(false);
-        }
-        else if (command == "get")
-        {
-            SendGetRequest(kURL);
-        }
-        else if (command == "post")
-        {
-            std::string postData = "Hello, this is a POST request.";
-            SendPostRequest(kURL, postData);
-        }
-        else if (command == "cleartoken")
-        {
-            session_token.clear();
-        }
-        else if (command == "createevent")
-        {
-            static int event = 0;
-            client.eventQueueMonitor->eventQueue->insertEvent(event++, "{\"key\": \"value\"}", "json");
-            client.eventQueueMonitor->eventQueue->insertEvent(event++, "<event><key>value</key></event>", "xml");
-        }
-        else
-        {
-            std::cout
-                << "Available commands: login, stateless, stopcommands, get, post, cleartoken, createevent, exit\n"
-                << std::endl;
-        }
+        auto handler = std::make_shared<UnixSocketHandler>(client, ioc, "/tmp/command_socket");
+
+        ioc.run();
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << "\n";
     }
 
     Logger::log("MAIN", "Main thread is exiting.");
