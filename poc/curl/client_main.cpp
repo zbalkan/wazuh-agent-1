@@ -8,7 +8,6 @@
 #include "requests.hpp"
 #include "token.hpp"
 
-std::string session_token {};
 
 int main()
 {
