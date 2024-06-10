@@ -10,6 +10,7 @@
 
 #include "defs.hpp"
 #include "token.hpp"
+#include "logger.hpp"
 
 
 void SendGetRequest(const std::string& pUrl) {
@@ -18,10 +19,10 @@ void SendGetRequest(const std::string& pUrl) {
         HTTPRequest& httpRequest = HTTPRequest::instance();
         httpRequest.get(url,
                         [](const std::string& response) {
-                            std::cout << "GET Response: " << response << std::endl;
+                            Logger::log("HTTP REQUEST] [GET RESPONSE", response);
                         },
                         [](const std::string& error, const long code) {
-                            std::cerr << "GET Request failed: " << error << " with code " << code << std::endl;
+                            Logger::log("HTTP REQUEST] [GET RESPONSE", error + " with code " + std::to_string(code));
                         });
     } catch (const std::exception& e) {
         std::cerr << "Exception: " << e.what() << std::endl;
@@ -34,10 +35,10 @@ void SendPostRequest(const std::string& pUrl, const std::string& data) {
         HTTPRequest& httpRequest = HTTPRequest::instance();
         httpRequest.post(url, data,
                          [](const std::string& response) {
-                             std::cout << "POST Response: " << response << std::endl;
+                            Logger::log("HTTP REQUEST] [POST RESPONSE", response);
                          },
                          [](const std::string& error, const long code) {
-                             std::cerr << "POST Request failed: " << error << " with code " << code << std::endl;
+                            Logger::log("HTTP REQUEST] [POST RESPONSE", error + " with code " + std::to_string(code));
                          });
     } catch (const std::exception& e) {
         std::cerr << "Exception: " << e.what() << std::endl;
@@ -51,11 +52,11 @@ void SendLoginRequest(const std::string& pUrl, const std::string& uuid, const st
         std::string data = uuidKey + uuid + "&" + passwordKey + password;
         httpRequest.post(url, data,
                          [&token](const std::string& response) {
-                            std::cout << "Login Response: " << response << std::endl;
+                            Logger::log("HTTP REQUEST] [LOGIN RESPONSE", response);
                             token = response;
                          },
                          [](const std::string& error, const long code) {
-                             std::cerr << "Login Request failed: " << error << " with code " << code << std::endl;
+                             Logger::log("HTTP REQUEST] [LOGIN RESPONSE", error + " with code " + std::to_string(code));
                          });
     } catch (const std::exception& e) {
         std::cerr << "Exception: " << e.what() << std::endl;
@@ -74,11 +75,11 @@ bool SendStatelessRequest(const std::string& pUrl, const std::string& uuid, cons
         bool success = false;
         httpRequest.post(url, data,
                          [&success](const std::string& response) {
-                            std::cout << "Stateless Response: " << response << std::endl;
+                            Logger::log("HTTP REQUEST] [STATELESS RESPONSE", response);
                             success = true;
                          },
                          [&success](const std::string& error, const long code) {
-                            std::cerr << "Stateless Request failed: " << error << " with code " << code << std::endl;
+                            Logger::log("HTTP REQUEST] [STATELESS RESPONSE", error + " with code " + std::to_string(code));
                             success = false;
                          },
                          "",
@@ -104,11 +105,11 @@ std::pair<bool, std::string> SendCommandsRequest(const std::string& pUrl, const 
 
         httpRequest.get(url,
                         [&promise](const std::string& response) {
-                            std::cout << "Commands Response: " << response << std::endl;
+                            Logger::log("HTTP REQUEST] [COMMAND RECEIVED", response);
                             promise.set_value({true, response});
                         },
                         [&promise, pUrl, uuid, password, &token](const std::string& error, const long code) {
-                            std::cerr << "Commands Request failed: " << error << " with code " << code << std::endl;
+                            Logger::log("HTTP REQUEST] [COMMAND REQUEST FAILED", error + " with code " + std::to_string(code));
                             if (code == 401) {
                                 SendLoginRequest(pUrl, uuid, password, token);
                             }

@@ -2,6 +2,7 @@
 #include <string>
 
 #include "client.hpp"
+#include "logger.hpp"
 #include "defs.hpp"
 #include "requests.hpp"
 #include "token.hpp"
@@ -52,6 +53,6 @@ int main()
         }
     }
 
-    std::cout << "Main thread is exiting.\n";
+    Logger::log("MAIN", "Main thread is exiting.");
     return 0;
 }

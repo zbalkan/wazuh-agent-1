@@ -8,6 +8,8 @@
 #include <functional>
 #include <atomic>
 
+#include "logger.hpp"
+
 
 template <typename QueueDB>
 struct EventQueueMonitor
@@ -18,14 +20,14 @@ struct EventQueueMonitor
         eventQueue->createTable();
         eventQueue->updateEntriesStatus("processing", "pending");
 
-        std::cout << "Starting event queue thread\n";
+        Logger::log("EVENT QUEUE MONITOR", "Starting event queue thread");
         dispatcher_thread = std::make_unique<std::thread>([this, onEvent] () { dispatcher(onEvent); });
     }
 
     ~EventQueueMonitor()
     {
         keepDbRunning.store(false);
-        std::cout << "Waiting for event queue thread to join...";
+        Logger::log("EVENT QUEUE MONITOR", "Waiting for event queue thread to join");
         for (auto& thread : eventDispatchThreads)
         {
             if (thread.joinable())
@@ -36,7 +38,7 @@ struct EventQueueMonitor
         dispatcher_thread->join();
         dispatcher_thread.reset();
         eventQueue.reset();
-        std::cout << "done.\n";
+        Logger::log("EVENT QUEUE MONITOR", "Destroyed");
     }
 
     void dispatcher(std::function<bool(const std::string&)> onEvent)
@@ -81,7 +83,7 @@ struct EventQueueMonitor
 
                 for (const auto& event : pending_events)
                 {
-                    std::cout << "Dispatching event ID: " << event.id << ", Data: " << event.event_data << std::endl;
+                    Logger::log("EVENT QUEUE MONITOR", "Dispatching event ID: " + std::to_string(event.id) + ", Data: " + event.event_data);
                     event_ids.push_back(event.id);
                     event_data += event.event_data;
                     event_data += "\n";

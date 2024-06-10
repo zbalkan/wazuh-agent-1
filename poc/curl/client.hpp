@@ -3,6 +3,7 @@
 #include "event_queue_monitor.hpp"
 #include "command_dispatcher.hpp"
 #include "requests.hpp"
+#include "logger.hpp"
 #include "db/sqlite_wrapper.hpp"
 #include "db/rocksdb_wrapper.hpp"
 
@@ -15,6 +16,8 @@ struct Client
 {
     Client(const std::string& url, const std::string& uuid, const std::string& password, std::string& token)
     {
+        Logger::log("CLIENT", "Starting client...");
+
         // Login to get new token
         SendLoginRequest(url, uuid, password, token);
 
