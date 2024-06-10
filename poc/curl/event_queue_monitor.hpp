@@ -42,6 +42,7 @@ struct EventQueueMonitor
 
     void dispatcher(std::function<bool(const std::string&)> onEvent)
     {
+        // This should be part of the configuration
         const int N = 10; // Number of events to dispatch at once
         const int T = 5;  // Time interval in seconds
 
@@ -49,21 +50,8 @@ struct EventQueueMonitor
 
         while (keepDbRunning.load())
         {
-            eventQueue->deleteEntriesWithStatus("dispatched");
-
-            auto it = std::remove_if(eventDispatchThreads.begin(),
-                                     eventDispatchThreads.end(),
-                                     [](std::thread& t)
-                                     {
-                                         if (t.joinable())
-                                         {
-                                             t.join();
-                                             return true;
-                                         }
-                                         return false;
-                                     });
-
-            eventDispatchThreads.erase(it, eventDispatchThreads.end());
+            CleanUpDispatchedEvents();
+            CleanUpJoinableThreads();
 
             const auto current_time = std::chrono::steady_clock::now();
 
@@ -79,6 +67,7 @@ struct EventQueueMonitor
                 std::vector<int> event_ids;
                 std::string event_data;
 
+                // Aggregate event data for the batch to dispatch
                 for (const auto& event : pending_events)
                 {
                     Logger::log("EVENT QUEUE MONITOR",
@@ -88,6 +77,7 @@ struct EventQueueMonitor
                     event_data += "\n";
                 }
 
+                // Create a new thread for each event batch to dispatch
                 eventDispatchThreads.emplace_back(
                     [this, onEvent, event_data, event_ids]()
                     {
@@ -103,6 +93,30 @@ struct EventQueueMonitor
             }
             last_dispatch_time = current_time;
         }
+    }
+
+    void CleanUpDispatchedEvents()
+    {
+        // Cleanup dispatched events
+        // (this could be done in a separate thread as well, maybe by a different class)
+        eventQueue->deleteEntriesWithStatus("dispatched");
+    }
+
+    void CleanUpJoinableThreads()
+    {
+        auto it = std::remove_if(eventDispatchThreads.begin(),
+                                 eventDispatchThreads.end(),
+                                 [](std::thread& t)
+                                 {
+                                     if (t.joinable())
+                                     {
+                                         t.join();
+                                         return true;
+                                     }
+                                     return false;
+                                 });
+
+        eventDispatchThreads.erase(it, eventDispatchThreads.end());
     }
 
     std::atomic<bool> keepDbRunning = true;
