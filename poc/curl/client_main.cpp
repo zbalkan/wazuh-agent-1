@@ -9,7 +9,7 @@
 
 int main()
 {
-    Client client(kURL, kUUID, kPASSWORD, session_token);
+    Client client;
 
     try
     {

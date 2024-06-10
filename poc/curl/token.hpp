@@ -7,9 +7,6 @@
 #include <string>
 #include <unordered_map>
 
-
-std::string session_token {};
-
 struct TokenInfo
 {
     std::string token;

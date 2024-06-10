@@ -101,34 +101,33 @@ private:
                 Logger::log("SOCKET HANDLER", "Received command: " + command);
 
                 std::string response = "Processed: " + command + "\n";
-                boost::asio::async_write(
-                    *socket,
-                    boost::asio::buffer(response),
-                    [this, socket, buffer, command](boost::system::error_code ec, std::size_t)
-                    {
-                        if (!ec)
-                        {
-                            if (command == "exit")
-                            {
-                                stop();
-                                return;
-                            }
+                boost::asio::async_write(*socket,
+                                         boost::asio::buffer(response),
+                                         [this, socket, buffer, command](boost::system::error_code ec, std::size_t)
+                                         {
+                                             if (!ec)
+                                             {
+                                                 if (command == "exit")
+                                                 {
+                                                     stop();
+                                                     return;
+                                                 }
 
-                            handle_client(socket);
-                        }
-                        else
-                        {
-                            std::cerr << "Error on write: " << ec.message() << "\n";
-                        }
-                    });
+                                                 handle_client(socket);
+                                             }
+                                             else
+                                             {
+                                                 std::cerr << "Error on write: " << ec.message() << "\n";
+                                             }
+                                         });
 
                 if (command == "login")
                 {
-                    SendLoginRequest(kURL, kUUID, kPASSWORD, session_token);
+                    SendLoginRequest(client_.url, client_.uuid, client_.password, client_.token);
                 }
                 else if (command == "stateless")
                 {
-                    SendStatelessRequest(kURL, kUUID, session_token, "");
+                    SendStatelessRequest(client_.url, client_.uuid, client_.token, "");
                 }
                 else if (command == "stopcommands")
                 {
@@ -136,16 +135,16 @@ private:
                 }
                 else if (command == "get")
                 {
-                    SendGetRequest(kURL);
+                    SendGetRequest(client_.url);
                 }
                 else if (command == "post")
                 {
                     std::string postData = "Hello, this is a POST request.";
-                    SendPostRequest(kURL, postData);
+                    SendPostRequest(client_.url, postData);
                 }
                 else if (command == "cleartoken")
                 {
-                    session_token.clear();
+                    client_.token.clear();
                 }
                 else if (command == "createevent")
                 {
@@ -154,8 +153,9 @@ private:
                 }
                 else
                 {
-                    Logger::log("SOCKET HANDLER", "Available commands: login, stateless, stopcommands, get, post, "
-                                                 "cleartoken, createevent, exit");
+                    Logger::log("SOCKET HANDLER",
+                                "Available commands: login, stateless, stopcommands, get, post, "
+                                "cleartoken, createevent, exit");
                 }
             }
             else

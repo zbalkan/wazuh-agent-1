@@ -13,9 +13,11 @@
 
 struct Client
 {
-    Client(const std::string& url, const std::string& uuid, const std::string& password, std::string& token)
+    Client()
     {
         Logger::log("CLIENT", "Starting client...");
+
+        ReadCredentials();
 
         // Login to get new token
         SendLoginRequest(url, uuid, password, token);
@@ -25,9 +27,22 @@ struct Client
 
         // Start queue monitoring
         eventQueueMonitor = std::make_unique<EventQueueMonitor<SQLiteWrapper>>(
-            [&url, &uuid, &token](const std::string& event) { return SendStatelessRequest(url, uuid, token, event); });
+            [this](const std::string& event)
+            { return SendStatelessRequest(this->url, this->uuid, this->token, event); });
     }
 
+    void ReadCredentials()
+    {
+        Logger::log("CLIENT", "Reading credentials...");
+        url = kURL;
+        uuid = kUUID;
+        password = kPASSWORD;
+    }
+
+    std::string url;
+    std::string uuid;
+    std::string password;
+    std::string token;
     std::unique_ptr<EventQueueMonitor<SQLiteWrapper>> eventQueueMonitor;
     std::unique_ptr<CommandDispatcher<RocksDBWrapper>> commandDispatcher;
 };
