@@ -86,15 +86,59 @@ public:
         return events;
     }
 
-    void updateEventStatus(const std::vector<int>& event_ids) override {
+    std::vector<Event> fetchAndMarkPendingEvents(int limit) override {
+        std::vector<Event> events;
+        rocksdb::WriteBatch batch;
+        auto it = db->NewIterator(rocksdb::ReadOptions());
+        for (it->SeekToFirst(); it->Valid() && events.size() < limit; it->Next()) {
+            Event event = deserializeEvent(it->value().ToString());
+            if (event.status == "pending") {
+                event.status = "processing";
+                events.push_back(event);
+                batch.Put(it->key(), serializeEvent(event));
+            }
+        }
+        rocksdb::Status s = db->Write(rocksdb::WriteOptions(), &batch);
+        delete it;
+        return events;
+    }
+
+    void updateEventStatus(const std::vector<int>& event_ids, const std::string& status) override {
         for (int id : event_ids) {
             std::string key = std::to_string(id);
             std::string value;
             db->Get(rocksdb::ReadOptions(), key, &value);
             Event event = deserializeEvent(value);
-            event.status = "dispatched";
+            event.status = status;
             db->Put(rocksdb::WriteOptions(), key, serializeEvent(event));
         }
+    }
+
+    void deleteEntriesWithStatus(const std::string& status) override {
+        rocksdb::WriteBatch batch;
+        auto it = db->NewIterator(rocksdb::ReadOptions());
+        for (it->SeekToFirst(); it->Valid(); it->Next()) {
+            Event event = deserializeEvent(it->value().ToString());
+            if (event.status == status) {
+                batch.Delete(it->key());
+            }
+        }
+        db->Write(rocksdb::WriteOptions(), &batch);
+        delete it;
+    }
+
+    void updateEntriesStatus(const std::string& from_status, const std::string& to_status) override {
+        rocksdb::WriteBatch batch;
+        auto it = db->NewIterator(rocksdb::ReadOptions());
+        for (it->SeekToFirst(); it->Valid(); it->Next()) {
+            Event event = deserializeEvent(it->value().ToString());
+            if (event.status == from_status) {
+                event.status = to_status;
+                batch.Put(it->key(), serializeEvent(event));
+            }
+        }
+        db->Write(rocksdb::WriteOptions(), &batch);
+        delete it;
     }
 
     int getPendingEventCount() override {

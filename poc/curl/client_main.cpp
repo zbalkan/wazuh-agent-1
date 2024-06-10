@@ -1,18 +1,18 @@
 #include <iostream>
 #include <string>
 
-#include "agent.hpp"
+#include "client.hpp"
 #include "defs.hpp"
 #include "requests.hpp"
 #include "token.hpp"
-#include "events.hpp"
+#include "event_queue_monitor.hpp"
 
 std::string session_token {};
 
 
 int main()
 {
-    Agent agent(kURL, kUUID, kPASSWORD, session_token);
+    Client client(kURL, kUUID, kPASSWORD, session_token);
 
     std::string command;
 
@@ -44,8 +44,8 @@ int main()
         }
         else if (command == "createevent") {
             static int event = 0;
-            agent.eventsDb->db->insertEvent(event++, "{\"key\": \"value\"}", "json");
-            agent.eventsDb->db->insertEvent(event++, "<event><key>value</key></event>", "xml");
+            client.eventQueueMonitor->eventQueue->insertEvent(event++, "{\"key\": \"value\"}", "json");
+            client.eventQueueMonitor->eventQueue->insertEvent(event++, "<event><key>value</key></event>", "xml");
         }
         else {
             std::cout << "Available commands: login, stateless, stopcommands, get, post, cleartoken, createevent, exit\n" << std::endl;

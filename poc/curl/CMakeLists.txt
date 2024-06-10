@@ -46,7 +46,7 @@ include_directories(${CMAKE_SOURCE_DIR}/external)
 add_subdirectory(wazuh-http-request)
 
 add_executable(server server.cpp)
-add_executable(client client.cpp)
+add_executable(client client_main.cpp)
 
 target_include_directories(server PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 target_include_directories(client PRIVATE ${JWT_CPP_INCLUDE_DIRS})
