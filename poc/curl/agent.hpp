@@ -1,6 +1,7 @@
 #pragma once
 
 #include "events.hpp"
+#include "command_dispatcher.hpp"
 #include "requests.hpp"
 #include "db/sqlite_wrapper.hpp"
 #include "db/rocksdb_wrapper.hpp"
@@ -17,13 +18,8 @@ struct Agent
         // Login to get new token
         SendLoginRequest(url, uuid, password, token);
 
-        // Start commands thread
-        tCommands = std::make_unique<std::thread>(
-            [&url, &uuid, &password, &token] ()
-            {
-                SendCommandsRequest(url, uuid, password, token);
-            }
-        );
+        // Start command dispatcher
+        commandDispatcher = std::make_unique<CommandDispatcher<RocksDBWrapper>>(url, uuid, password, token);
 
         // Start events db
         eventsDb = std::make_unique<EventsDb<SQLiteWrapper>>(
@@ -43,4 +39,5 @@ struct Agent
 
     std::unique_ptr<std::thread> tCommands;
     std::unique_ptr<EventsDb<SQLiteWrapper>> eventsDb;
+    std::unique_ptr<CommandDispatcher<RocksDBWrapper>> commandDispatcher;
 };

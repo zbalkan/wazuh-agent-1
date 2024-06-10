@@ -6,6 +6,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <utility>
+#include <future>
 
 #include "HTTPRequest.hpp"
 #include "IURLRequest.hpp"
@@ -91,30 +93,36 @@ void SendStatelessRequest(const std::string& pUrl, const std::string& uuid, cons
     }
 }
 
-void SendCommandsRequest(const std::string& pUrl, const std::string& uuid, const std::string& password, std::string& token) {
-    while (keepRunning.load()) {
-        try {
-            std::string authHeader = "Authorization: " + bearerPrefix + token;
-            auto HeadersWithToken = DEFAULT_HEADERS;
-            HeadersWithToken.insert(authHeader);
+std::pair<bool, std::string> SendCommandsRequest(const std::string& pUrl, const std::string& uuid, const std::string& password, std::string& token) {
+    try {
+        std::string authHeader = "Authorization: " + bearerPrefix + token;
+        auto HeadersWithToken = DEFAULT_HEADERS;
+        HeadersWithToken.insert(authHeader);
 
-            HttpURL url {pUrl + "/commands" + "?" + uuidKey + uuid };
-            HTTPRequest& httpRequest = HTTPRequest::instance();
-            httpRequest.get(url,
-                            [](const std::string& response) {
-                                std::cout << "Commands Response: " << response << std::endl;
-                            },
-                            [pUrl, uuid, password, &token](const std::string& error, const long code) {
-                                std::cerr << "Commands Request failed: " << error << " with code " << code << std::endl;
-                                if (code == 401) {
-                                    SendLoginRequest(pUrl, uuid, password, token);
-                                }
-                            },
-                            "",
-                            HeadersWithToken);
-        } catch (const std::exception& e) {
-            std::cerr << "Exception: " << e.what() << std::endl;
-        }
+        HttpURL url {pUrl + "/commands" + "?" + uuidKey + uuid };
+        HTTPRequest& httpRequest = HTTPRequest::instance();
+
+        std::promise<std::pair<bool, std::string>> promise;
+        auto future = promise.get_future();
+
+        httpRequest.get(url,
+                        [&promise](const std::string& response) {
+                            std::cout << "Commands Response: " << response << std::endl;
+                            promise.set_value({true, response});
+                        },
+                        [&promise, pUrl, uuid, password, &token](const std::string& error, const long code) {
+                            std::cerr << "Commands Request failed: " << error << " with code " << code << std::endl;
+                            if (code == 401) {
+                                SendLoginRequest(pUrl, uuid, password, token);
+                            }
+                            promise.set_value({false, error});
+                        },
+                        "",
+                        HeadersWithToken);
+        return future.get();
+    } catch (const std::exception& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+        return {false, e.what()};
     }
 }
 

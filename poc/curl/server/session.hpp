@@ -217,7 +217,7 @@ private:
                     res_.result(http::status::request_timeout);
                 } else {
                     res_.result(http::status::ok);
-                    res_.body() = "Command to run";
+                    res_.body() = "{\"origin\" : {\"module\" : \"upgrade_module\"}, \"command\": \"upgrade_update_status\", \"parameters\" : {\"agents\" : [20], \"error\"  : 0, \"data\"  : \"Upgrade Successful\", \"status\": \"Done\"}}";
                 }
             } else {
                 res_.result(http::status::unauthorized);

@@ -10,6 +10,12 @@ struct Event{
     std::string status;
 };
 
+struct Command{
+    int id;
+    std::string command_data;
+    std::string status;
+};
+
 template <typename DB>
 class DBWrapper {
 public:
@@ -20,4 +26,7 @@ public:
     virtual std::vector<Event> fetchPendingEvents(int limit) = 0;
     virtual void updateEventStatus(const std::vector<int>& event_ids) = 0;
     virtual int getPendingEventCount() = 0;
+    virtual void insertCommand(const std::string& command_data) = 0;
+    virtual Command fetchPendingCommand() = 0;
+    virtual void updateCommandStatus(int commandId) = 0;
 };

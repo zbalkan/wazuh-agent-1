@@ -90,6 +90,19 @@ public:
         return count;
     }
 
+    void insertCommand(const std::string& command_data) override {
+
+    }
+
+    Command fetchPendingCommand() {
+        Command command;
+        return command;
+    }
+
+    void updateCommandStatus(int commandId) {
+
+    }
+
 private:
     sqlite3* db = nullptr;
 };
