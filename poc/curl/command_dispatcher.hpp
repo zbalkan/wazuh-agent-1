@@ -35,7 +35,7 @@ struct CommandDispatcher
         commandDb.reset();
     }
 
-    void sendCommandsRequests (const std::string& url, const std::string& uuid, const std::string& password, std::string& token)
+    void sendCommandsRequests(const std::string& url, const std::string& uuid, const std::string& password, std::string& token)
     {
         while (keepCommandDispatcherRunning.load()) {
             auto response = SendCommandsRequest(url, uuid, password, token);
