@@ -30,12 +30,6 @@ struct Client
         );
     }
 
-    ~Client()
-    {
-        // Stop commands thread
-        StopCommands();
-    }
-
     std::unique_ptr<EventQueueMonitor<SQLiteWrapper>> eventQueueMonitor;
     std::unique_ptr<CommandDispatcher<RocksDBWrapper>> commandDispatcher;
 };

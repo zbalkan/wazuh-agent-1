@@ -2,22 +2,14 @@
 
 #include <iostream>
 #include <string>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
-#include <utility>
 #include <future>
+#include <utility>
 
 #include "HTTPRequest.hpp"
 #include "IURLRequest.hpp"
 
 #include "defs.hpp"
 #include "token.hpp"
-
-
-std::condition_variable condition;
-std::atomic<bool> keepRunning(true);
 
 
 void SendGetRequest(const std::string& pUrl) {
@@ -129,9 +121,4 @@ std::pair<bool, std::string> SendCommandsRequest(const std::string& pUrl, const 
         std::cerr << "Exception: " << e.what() << std::endl;
         return {false, e.what()};
     }
-}
-
-void StopCommands() {
-    keepRunning.store(false);
-    condition.notify_one();
 }

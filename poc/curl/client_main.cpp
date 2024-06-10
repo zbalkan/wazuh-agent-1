@@ -30,7 +30,7 @@ int main()
             SendStatelessRequest(kURL, kUUID, session_token, "");
         }
         else if (command == "stopcommands") {
-            StopCommands();
+            client.commandDispatcher->keepCommandDispatcherRunning.store(false);
         }
         else if (command == "get") {
             SendGetRequest(kURL);
