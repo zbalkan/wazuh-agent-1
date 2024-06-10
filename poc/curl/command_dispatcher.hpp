@@ -1,18 +1,17 @@
 #pragma once
 
-#include "requests.hpp"
 #include "logger.hpp"
+#include "requests.hpp"
 
-#include <iostream>
-#include <string>
-#include <chrono>
-#include <thread>
-#include <functional>
 #include <atomic>
+#include <chrono>
+#include <functional>
+#include <iostream>
 #include <memory>
+#include <string>
+#include <thread>
 
-
-template <typename CommandDB>
+template<typename CommandDB>
 struct CommandDispatcher
 {
     CommandDispatcher(const std::string& url, const std::string& uuid, const std::string& password, std::string& token)
@@ -22,8 +21,9 @@ struct CommandDispatcher
         commandDb = std::make_unique<CommandDB>("commandsRocksDb.db");
         commandDb->createTable();
 
-        sender_thread = std::make_unique<std::thread>([this, &url, &uuid, &password, &token] () {sendCommandsRequests(url, uuid, password, token);});
-        dispatcher_thread = std::make_unique<std::thread>([this] () {dispatcher();});
+        sender_thread = std::make_unique<std::thread>([this, &url, &uuid, &password, &token]()
+                                                      { sendCommandsRequests(url, uuid, password, token); });
+        dispatcher_thread = std::make_unique<std::thread>([this]() { dispatcher(); });
     }
 
     ~CommandDispatcher()
@@ -38,12 +38,17 @@ struct CommandDispatcher
         Logger::log("COMMAND DISPATCHER", "Destroyed");
     }
 
-    void sendCommandsRequests(const std::string& url, const std::string& uuid, const std::string& password, std::string& token)
+    void sendCommandsRequests(const std::string& url,
+                              const std::string& uuid,
+                              const std::string& password,
+                              std::string& token)
     {
-        while (keepCommandDispatcherRunning.load()) {
+        while (keepCommandDispatcherRunning.load())
+        {
             auto response = SendCommandsRequest(url, uuid, password, token);
             bool success = response.first;
-            if (success) {
+            if (success)
+            {
                 commandDb->insertCommand(response.second);
             }
         }
@@ -51,10 +56,14 @@ struct CommandDispatcher
 
     void dispatcher()
     {
-        while (keepCommandDispatcherRunning.load()) {
+        while (keepCommandDispatcherRunning.load())
+        {
             const auto& pending_command = commandDb->fetchPendingCommand();
-            if (pending_command.id != -1) {
-                Logger::log("COMMAND DISPATCHER", "Dispatching command ID: " + std::to_string(pending_command.id) + ", Data: " + pending_command.command_data);
+            if (pending_command.id != -1)
+            {
+                Logger::log("COMMAND DISPATCHER",
+                            "Dispatching command ID: " + std::to_string(pending_command.id) +
+                                ", Data: " + pending_command.command_data);
                 commandDb->updateCommandStatus(pending_command.id);
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));

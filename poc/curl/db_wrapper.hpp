@@ -3,21 +3,24 @@
 #include <string>
 #include <vector>
 
-struct Event{
+struct Event
+{
     int id;
     std::string event_data;
     std::string event_type;
     std::string status;
 };
 
-struct Command{
+struct Command
+{
     int id;
     std::string command_data;
     std::string status;
 };
 
-template <typename DB>
-class DBWrapper {
+template<typename DB>
+class DBWrapper
+{
 public:
     virtual ~DBWrapper() = default;
 

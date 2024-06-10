@@ -14,6 +14,7 @@ const std::string kURL = "http://localhost:8080";
 const std::string kUUID = "agent_uuid";
 const std::string kPASSWORD = "123456";
 
-void fail(boost::beast::error_code ec, char const* what) {
+void fail(boost::beast::error_code ec, char const* what)
+{
     std::cerr << what << ": " << ec.message() << "\n";
 }

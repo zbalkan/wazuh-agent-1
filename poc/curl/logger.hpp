@@ -1,14 +1,16 @@
 #pragma once
 
-#include <iostream>
-#include <iomanip>
 #include <chrono>
 #include <ctime>
+#include <iomanip>
+#include <iostream>
 #include <sstream>
 
-class Logger {
+class Logger
+{
 public:
-    static void log(const std::string& tag, const std::string& message) {
+    static void log(const std::string& tag, const std::string& message)
+    {
         // Get the current time
         auto now = std::chrono::system_clock::now();
         auto in_time_t = std::chrono::system_clock::to_time_t(now);

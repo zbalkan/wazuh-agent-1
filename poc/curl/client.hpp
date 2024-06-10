@@ -1,16 +1,15 @@
 #pragma once
 
-#include "event_queue_monitor.hpp"
 #include "command_dispatcher.hpp"
-#include "requests.hpp"
-#include "logger.hpp"
-#include "db/sqlite_wrapper.hpp"
 #include "db/rocksdb_wrapper.hpp"
+#include "db/sqlite_wrapper.hpp"
+#include "event_queue_monitor.hpp"
+#include "logger.hpp"
+#include "requests.hpp"
 
 #include <memory>
 #include <string>
 #include <thread>
-
 
 struct Client
 {
@@ -26,11 +25,7 @@ struct Client
 
         // Start queue monitoring
         eventQueueMonitor = std::make_unique<EventQueueMonitor<SQLiteWrapper>>(
-            [&url, &uuid, &token] (const std::string& event)
-            {
-                return SendStatelessRequest(url, uuid, token, event);
-            }
-        );
+            [&url, &uuid, &token](const std::string& event) { return SendStatelessRequest(url, uuid, token, event); });
     }
 
     std::unique_ptr<EventQueueMonitor<SQLiteWrapper>> eventQueueMonitor;
