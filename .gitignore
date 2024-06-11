@@ -7,3 +7,4 @@ wazuh-http-request/
 # Ignore every file with extension "pb.cc" and "pb.h"
 *.pb.cc
 *.pb.h
+__pycache__/
