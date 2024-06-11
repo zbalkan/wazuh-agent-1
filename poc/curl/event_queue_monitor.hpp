@@ -65,17 +65,26 @@ struct EventQueueMonitor
             if (auto pending_events = eventQueue->fetchAndMarkPendingEvents(N); !pending_events.empty())
             {
                 std::vector<int> event_ids;
-                std::string event_data;
+                std::string event_data = "[";
 
-                // Aggregate event data for the batch to dispatch
-                for (const auto& event : pending_events)
+                for (size_t i = 0; i < pending_events.size(); ++i)
                 {
+                    const auto& event = pending_events[i];
+
                     Logger::log("EVENT QUEUE MONITOR",
                                 "Dispatching event ID: " + std::to_string(event.id) + ", Data: " + event.event_data);
+
                     event_ids.push_back(event.id);
+
                     event_data += event.event_data;
-                    event_data += "\n";
+
+                    if (i != pending_events.size() - 1)
+                    {
+                        event_data += ",";
+                    }
                 }
+
+                event_data += "]";
 
                 // Create a new thread for each event batch to dispatch
                 eventDispatchThreads.emplace_back(

@@ -1,6 +1,7 @@
 import sqlite3
 import random
 import time
+import json
 from datetime import datetime
 
 def insert_event(event_data, event_type):
@@ -17,13 +18,25 @@ def insert_event(event_data, event_type):
         if conn:
             conn.close()
 
+def generate_event_data():
+    event_data = {
+        "origin": {
+            "module": "fim"
+        },
+        "command": "create_event",
+        "parameters": {
+            "data": f"event # {random.randint(1, 1000)}"
+        }
+    }
+    return json.dumps(event_data)
+
 def simulate_event_insertion(idle_length):
     event_types = ["type1", "type2", "type3"]
 
     while True:
         burst_length = random.randint(1, 20)
         for _ in range(burst_length):
-            event_data = f"event_{random.randint(1, 1000)}"
+            event_data = generate_event_data()
             event_type = random.choice(event_types)
             insert_event(event_data, event_type)
             print(f"Inserted event: {event_data}, {event_type} at {datetime.now()}")

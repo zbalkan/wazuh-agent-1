@@ -10,6 +10,7 @@
 #include <chrono>
 #include <ctime>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <random>
 #include <string>
 #include <thread>
@@ -24,6 +25,8 @@ namespace http = beast::http;
 namespace net = boost::asio;
 namespace urls = boost::urls;
 using tcp = net::ip::tcp;
+using json = nlohmann::json;
+
 
 class session : public std::enable_shared_from_this<session>
 {
@@ -219,6 +222,27 @@ private:
 
             if (token == validTokens[uuid].token && verifyToken(token))
             {
+                if (eventPos != std::string::npos)
+                {
+                    eventPos += eventKey.length();
+                    std::size_t end_pos = body.find("&", eventPos);
+                    std::string event_data = body.substr(eventPos, end_pos - eventPos);
+
+                    try
+                    {
+                        json parsed_json = json::parse(event_data);
+                        std::cout << "\nParsed JSON Data:" << std::endl;
+                        std::cout << parsed_json.dump(4) << std::endl;
+                    }
+                    catch (json::parse_error& e)
+                    {
+                        std::cerr << "Failed to parse JSON: " << e.what() << std::endl;
+                    }
+                }
+                else
+                {
+                    std::cerr << "Event data not found in the request." << std::endl;
+                }
                 res_.result(http::status::ok);
                 res_.body() = "Stateless post request received";
             }
