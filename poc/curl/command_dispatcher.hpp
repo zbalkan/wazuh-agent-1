@@ -70,6 +70,14 @@ struct CommandDispatcher
         }
     }
 
+    void startCommandDispatcher()
+    {
+        dispatcher_thread->join();
+        dispatcher_thread.reset();
+        keepCommandDispatcherRunning.store(true);
+        dispatcher_thread = std::make_unique<std::thread>([this]() { dispatcher(); });
+    }
+
     std::atomic<bool> keepCommandDispatcherRunning = true;
     std::unique_ptr<std::thread> dispatcher_thread;
     std::unique_ptr<std::thread> sender_thread;
