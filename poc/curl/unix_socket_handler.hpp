@@ -125,6 +125,10 @@ private:
                 {
                     SendLoginRequest(client_.url, client_.uuid, client_.password, client_.token);
                 }
+                else if (command == "register")
+                {
+                    SendRegisterRequest(client_.url, client_.uuid, client_.name, client_.ip, client_.token);
+                }
                 else if (command == "stateless")
                 {
                     SendStatelessRequest(client_.url, client_.uuid, client_.token, "");

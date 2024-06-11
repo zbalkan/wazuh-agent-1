@@ -153,3 +153,45 @@ SendCommandsRequest(const std::string& pUrl, const std::string& uuid, const std:
         return {false, e.what()};
     }
 }
+
+std::pair<bool, std::string> SendRegisterRequest(const std::string& pUrl,
+                                                 const std::string& uuid,
+                                                 const std::string& name,
+                                                 const std::string& ip,
+                                                 std::string& token)
+{
+    try
+    {
+        std::string authHeader = "Authorization: " + bearerPrefix + token;
+        auto HeadersWithToken = DEFAULT_HEADERS;
+        HeadersWithToken.insert(authHeader);
+
+        HttpURL url {pUrl + "/agents"};
+        HTTPRequest& httpRequest = HTTPRequest::instance();
+        std::string data = uuidKey + uuid + "&" + nameKey + name + "&" + ipKey + ip;
+        std::promise<std::pair<bool, std::string>> promise;
+        auto future = promise.get_future();
+
+        httpRequest.post(
+            url,
+            data,
+            [&promise](const std::string& response)
+            {
+                Logger::log("HTTP REQUEST] [REGISTER PROCESSED", response);
+                promise.set_value({true, response});
+            },
+            [&promise](const std::string& error, const long code)
+            {
+                Logger::log("HTTP REQUEST] [REGISTER REQUEST FAILED", error + " with code " + std::to_string(code));
+                promise.set_value({false, error});
+            },
+            "",
+            HeadersWithToken);
+        return future.get();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << std::endl;
+        return {false, e.what()};
+    }
+}

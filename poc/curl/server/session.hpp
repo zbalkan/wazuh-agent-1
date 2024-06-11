@@ -127,6 +127,10 @@ private:
                 res_.result(http::status::ok);
                 res_.body() = "Received commands post request";
             }
+            else if (req_.target() == "/agents")
+            {
+                handleRegister();
+            }
             else
             {
                 res_.result(http::status::ok);
@@ -288,6 +292,44 @@ private:
         else
         {
             std::cout << "UUID not found in query parameters" << std::endl;
+        }
+    }
+
+    void handleRegister()
+    {
+        auto authHeader = req_["Authorization"];
+
+        if (authHeader.empty() || authHeader.find(bearerPrefix) == std::string::npos)
+        {
+            res_.result(http::status::unauthorized);
+            res_.body() = "Missing token";
+            return;
+        }
+
+        std::string token = authHeader.substr(bearerPrefix.length());
+
+        auto body = req_.body();
+        auto uuidPos = body.find(uuidKey);
+        auto namePos = body.find(nameKey);
+        if (uuidPos != std::string::npos)
+        {
+            std::string uuid = body.substr(uuidPos + uuidKey.length(), namePos - uuidPos - uuidKey.length() - 1);
+
+            if (token == validTokens[uuid].token && verifyToken(token))
+            {
+                res_.result(http::status::ok);
+                res_.body() = "agent_key";
+            }
+            else
+            {
+                res_.result(http::status::unauthorized);
+                res_.body() = "Invalid or expired token";
+            }
+        }
+        else
+        {
+            res_.result(http::status::bad_request);
+            res_.body() = "Invalid request format";
         }
     }
 };

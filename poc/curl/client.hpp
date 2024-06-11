@@ -37,12 +37,16 @@ struct Client
         url = kURL;
         uuid = kUUID;
         password = kPASSWORD;
+        name = kNAME;
+        ip = kIP;
     }
 
     std::string url;
     std::string uuid;
     std::string password;
     std::string token;
+    std::string name;
+    std::string ip;
     std::unique_ptr<EventQueueMonitor<SQLiteWrapper>> eventQueueMonitor;
     std::unique_ptr<CommandDispatcher<RocksDBWrapper>> commandDispatcher;
 };
