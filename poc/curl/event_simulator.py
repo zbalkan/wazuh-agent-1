@@ -17,10 +17,11 @@ def insert_event(event_data, event_type):
         if conn:
             conn.close()
 
-def simulate_event_insertion(burst_length, idle_length):
+def simulate_event_insertion(idle_length):
     event_types = ["type1", "type2", "type3"]
 
     while True:
+        burst_length = random.randint(1, 20)
         for _ in range(burst_length):
             event_data = f"event_{random.randint(1, 1000)}"
             event_type = random.choice(event_types)
@@ -32,6 +33,5 @@ def simulate_event_insertion(burst_length, idle_length):
         time.sleep(idle_length)
 
 if __name__ == "__main__":
-    burst_length = random.randint(1, 20)
     idle_length = 5
-    simulate_event_insertion(burst_length, idle_length)
+    simulate_event_insertion(idle_length)
