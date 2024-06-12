@@ -20,12 +20,12 @@ struct EventQueueMonitor
         eventQueue->updateEntriesStatus("processing", "pending");
 
         Logger::log("EVENT QUEUE MONITOR", "Starting event queue thread");
-        dispatcher_thread = std::make_unique<std::thread>([this, onEvent]() { dispatcher(onEvent); });
+        dispatcher_thread = std::make_unique<std::thread>([this, onEvent]() { Run(onEvent); });
     }
 
     ~EventQueueMonitor()
     {
-        keepDbRunning.store(false);
+        continueEventProcessing.store(false);
         Logger::log("EVENT QUEUE MONITOR", "Waiting for event queue thread to join");
         for (auto& thread : eventDispatchThreads)
         {
@@ -40,67 +40,81 @@ struct EventQueueMonitor
         Logger::log("EVENT QUEUE MONITOR", "Destroyed");
     }
 
-    void dispatcher(std::function<bool(const std::string&)> onEvent)
+    void Run(std::function<bool(const std::string&)> onEvent)
     {
-        // This should be part of the configuration
-        const int N = 10; // Number of events to dispatch at once
-        const int T = 5;  // Time interval in seconds
-
         auto last_dispatch_time = std::chrono::steady_clock::now();
 
-        while (keepDbRunning.load())
+        while (continueEventProcessing.load())
         {
-            CleanUpDispatchedEvents();
-            CleanUpJoinableThreads();
+            PerformCleanup();
 
-            const auto current_time = std::chrono::steady_clock::now();
-
-            if (eventQueue->getPendingEventCount() < N &&
-                std::chrono::duration_cast<std::chrono::seconds>(current_time - last_dispatch_time).count() < T)
+            if (!ShouldDispatchEvents(last_dispatch_time))
             {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
                 continue;
             }
 
-            if (auto pending_events = eventQueue->fetchAndMarkPendingEvents(N); !pending_events.empty())
+            if (auto pending_events = eventQueue->fetchAndMarkPendingEvents(batchSize); !pending_events.empty())
             {
-                std::vector<int> event_ids;
-                std::string event_data = "[";
-
-                for (size_t i = 0; i < pending_events.size(); ++i)
-                {
-                    const auto& event = pending_events[i];
-
-                    Logger::log("EVENT QUEUE MONITOR",
-                                "Dispatching event ID: " + std::to_string(event.id) + ", Data: " + event.event_data);
-
-                    event_ids.push_back(event.id);
-
-                    event_data += event.event_data;
-
-                    if (i != pending_events.size() - 1)
-                    {
-                        event_data += ",";
-                    }
-                }
-
-                event_data += "]";
-
-                // Create a new thread for each event batch to dispatch
-                eventDispatchThreads.emplace_back(
-                    [this, onEvent, event_data, event_ids]()
-                    {
-                        if (onEvent(event_data))
-                        {
-                            eventQueue->updateEventStatus(event_ids, "dispatched");
-                        }
-                        else
-                        {
-                            eventQueue->updateEventStatus(event_ids, "pending");
-                        }
-                    });
+                DispatchPendingEvents(onEvent, pending_events);
             }
-            last_dispatch_time = current_time;
+
+            last_dispatch_time = std::chrono::steady_clock::now();
+        }
+    }
+
+    void PerformCleanup()
+    {
+        CleanUpDispatchedEvents();
+        CleanUpJoinableThreads();
+    }
+
+    bool ShouldDispatchEvents(const std::chrono::time_point<std::chrono::steady_clock>& last_dispatch_time)
+    {
+        const auto current_time = std::chrono::steady_clock::now();
+        return eventQueue->getPendingEventCount() >= batchSize ||
+               std::chrono::duration_cast<std::chrono::seconds>(current_time - last_dispatch_time).count() >=
+                   dispatchInterval;
+    }
+
+    void DispatchPendingEvents(const std::function<bool(const std::string&)>& onEvent,
+                               const std::vector<Event>& pending_events)
+    {
+        std::vector<int> event_ids;
+        std::string event_data = "[";
+
+        for (size_t i = 0; i < pending_events.size(); ++i)
+        {
+            const auto& event = pending_events[i];
+
+            Logger::log("EVENT QUEUE MONITOR",
+                        "Dispatching event ID: " + std::to_string(event.id) + ", Data: " + event.event_data);
+
+            event_ids.push_back(event.id);
+            event_data += event.event_data;
+
+            if (i != pending_events.size() - 1)
+            {
+                event_data += ",";
+            }
+        }
+
+        event_data += "]";
+
+        // Create a new thread for each event batch to dispatch
+        eventDispatchThreads.emplace_back([this, onEvent, event_data, event_ids]()
+                                          { UpdateEventStatus(onEvent(event_data), event_ids); });
+    }
+
+    void UpdateEventStatus(bool success, const std::vector<int>& event_ids)
+    {
+        if (success)
+        {
+            eventQueue->updateEventStatus(event_ids, "dispatched");
+        }
+        else
+        {
+            eventQueue->updateEventStatus(event_ids, "pending");
         }
     }
 
@@ -128,8 +142,12 @@ struct EventQueueMonitor
         eventDispatchThreads.erase(it, eventDispatchThreads.end());
     }
 
-    std::atomic<bool> keepDbRunning = true;
+    std::atomic<bool> continueEventProcessing = true;
     std::unique_ptr<std::thread> dispatcher_thread;
     std::unique_ptr<QueueDB> eventQueue;
     std::vector<std::thread> eventDispatchThreads;
+
+    // Configuration constants
+    const int batchSize = 10;       // Number of events to dispatch at once
+    const int dispatchInterval = 5; // Time interval in seconds
 };
