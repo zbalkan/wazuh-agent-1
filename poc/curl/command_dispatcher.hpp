@@ -14,15 +14,15 @@
 template<typename CommandDB>
 struct CommandDispatcher
 {
-    CommandDispatcher(const std::string& url, const std::string& uuid, const std::string& password, std::string& token)
+    CommandDispatcher(std::function<std::pair<bool, std::string>()> onCommand)
     {
         Logger::log("COMMAND DISPATCHER", "Starting command dispatcher thread");
 
         commandDb = std::make_unique<CommandDB>("commandsRocksDb.db");
         commandDb->createTable();
 
-        sender_thread = std::make_unique<std::thread>([this, &url, &uuid, &password, &token]()
-                                                      { sendCommandsRequests(url, uuid, password, token); });
+        sender_thread = std::make_unique<std::thread>([this, onCommand]()
+                                                      { sendCommandsRequests(onCommand); });
         dispatcher_thread = std::make_unique<std::thread>([this]() { dispatcher(); });
     }
 
@@ -38,16 +38,11 @@ struct CommandDispatcher
         Logger::log("COMMAND DISPATCHER", "Destroyed");
     }
 
-    void sendCommandsRequests(const std::string& url,
-                              const std::string& uuid,
-                              const std::string& password,
-                              std::string& token)
+    void sendCommandsRequests(std::function<std::pair<bool, std::string>()> onCommand)
     {
         while (keepCommandDispatcherRunning.load())
         {
-            auto response = SendCommandsRequest(url, uuid, password, token);
-            bool success = response.first;
-            if (success)
+            if (const auto response = onCommand(); response.first)
             {
                 commandDb->insertCommand(response.second);
             }

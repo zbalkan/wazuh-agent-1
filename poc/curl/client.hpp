@@ -23,7 +23,8 @@ struct Client
         SendLoginRequest(url, uuid, password, token);
 
         // Start command dispatcher
-        commandDispatcher = std::make_unique<CommandDispatcher<RocksDBWrapper>>(url, uuid, password, token);
+        commandDispatcher = std::make_unique<CommandDispatcher<RocksDBWrapper>>(
+            [this]() { return SendCommandsRequest(this->url, this->uuid, this->password, this->token); });
 
         // Start queue monitoring
         eventQueueMonitor = std::make_unique<EventQueueMonitor<SQLiteWrapper>>(
