@@ -16,8 +16,8 @@ struct EventQueueMonitor
     EventQueueMonitor(std::function<bool(const std::string&)> onEvent)
     {
         eventQueue = std::make_unique<QueueDB>();
-        eventQueue->createTable();
-        eventQueue->updateEntriesStatus("processing", "pending");
+        eventQueue->CreateTable();
+        eventQueue->UpdateEntriesStatus("processing", "pending");
 
         Logger::log("EVENT QUEUE MONITOR", "Starting event queue thread");
         dispatcher_thread = std::make_unique<std::thread>([this, onEvent]() { Run(onEvent); });
@@ -54,7 +54,7 @@ struct EventQueueMonitor
                 continue;
             }
 
-            if (auto pending_events = eventQueue->fetchAndMarkPendingEvents(batchSize); !pending_events.empty())
+            if (auto pending_events = eventQueue->FetchAndMarkPendingEvents(batchSize); !pending_events.empty())
             {
                 DispatchPendingEvents(onEvent, pending_events);
             }
@@ -72,7 +72,7 @@ struct EventQueueMonitor
     bool ShouldDispatchEvents(const std::chrono::time_point<std::chrono::steady_clock>& last_dispatch_time)
     {
         const auto current_time = std::chrono::steady_clock::now();
-        return eventQueue->getPendingEventCount() >= batchSize ||
+        return eventQueue->GetPendingEventCount() >= batchSize ||
                std::chrono::duration_cast<std::chrono::seconds>(current_time - last_dispatch_time).count() >=
                    dispatchInterval;
     }
@@ -110,11 +110,11 @@ struct EventQueueMonitor
     {
         if (success)
         {
-            eventQueue->updateEventStatus(event_ids, "dispatched");
+            eventQueue->UpdateEventStatus(event_ids, "dispatched");
         }
         else
         {
-            eventQueue->updateEventStatus(event_ids, "pending");
+            eventQueue->UpdateEventStatus(event_ids, "pending");
         }
     }
 
@@ -122,7 +122,7 @@ struct EventQueueMonitor
     {
         // Cleanup dispatched events
         // (this could be done in a separate thread as well, maybe by a different class)
-        eventQueue->deleteEntriesWithStatus("dispatched");
+        eventQueue->DeleteEntriesWithStatus("dispatched");
     }
 
     void CleanUpJoinableThreads()

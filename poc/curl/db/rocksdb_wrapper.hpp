@@ -30,9 +30,9 @@ public:
         delete db;
     }
 
-    void createTable() override {}
+    void CreateTable() override {}
 
-    void insertCommand(const std::string& command_data) override
+    void InsertCommand(const std::string& command_data) override
     {
         Command command {commandId, command_data, "pending"};
         std::string key = std::to_string(commandId);
@@ -41,7 +41,7 @@ public:
         commandId++;
     }
 
-    Command fetchPendingCommand() override
+    Command FetchPendingCommand() override
     {
         auto it = db->NewIterator(rocksdb::ReadOptions());
         it->SeekToFirst();
@@ -62,7 +62,7 @@ public:
         return command;
     }
 
-    void updateCommandStatus(int command_id) override
+    void UpdateCommandStatus(int command_id) override
     {
         std::string key = std::to_string(command_id);
         std::string value;
@@ -72,7 +72,7 @@ public:
         db->Put(rocksdb::WriteOptions(), key, serializeCommand(command));
     }
 
-    void insertEvent(int id, const std::string& event_data, const std::string& event_type) override
+    void InsertEvent(int id, const std::string& event_data, const std::string& event_type) override
     {
         Event event {id, event_data, event_type, "pending"};
         std::string key = std::to_string(id);
@@ -80,7 +80,7 @@ public:
         db->Put(rocksdb::WriteOptions(), key, value);
     }
 
-    std::vector<Event> fetchPendingEvents(int limit) override
+    std::vector<Event> FetchPendingEvents(int limit) override
     {
         std::vector<Event> events;
         auto it = db->NewIterator(rocksdb::ReadOptions());
@@ -96,7 +96,7 @@ public:
         return events;
     }
 
-    std::vector<Event> fetchAndMarkPendingEvents(int limit) override
+    std::vector<Event> FetchAndMarkPendingEvents(int limit) override
     {
         std::vector<Event> events;
         rocksdb::WriteBatch batch;
@@ -116,7 +116,7 @@ public:
         return events;
     }
 
-    void updateEventStatus(const std::vector<int>& event_ids, const std::string& status) override
+    void UpdateEventStatus(const std::vector<int>& event_ids, const std::string& status) override
     {
         for (int id : event_ids)
         {
@@ -129,7 +129,7 @@ public:
         }
     }
 
-    void deleteEntriesWithStatus(const std::string& status) override
+    void DeleteEntriesWithStatus(const std::string& status) override
     {
         rocksdb::WriteBatch batch;
         auto it = db->NewIterator(rocksdb::ReadOptions());
@@ -145,7 +145,7 @@ public:
         delete it;
     }
 
-    void updateEntriesStatus(const std::string& from_status, const std::string& to_status) override
+    void UpdateEntriesStatus(const std::string& from_status, const std::string& to_status) override
     {
         rocksdb::WriteBatch batch;
         auto it = db->NewIterator(rocksdb::ReadOptions());
@@ -162,7 +162,7 @@ public:
         delete it;
     }
 
-    int getPendingEventCount() override
+    int GetPendingEventCount() override
     {
         int count = 0;
         auto it = db->NewIterator(rocksdb::ReadOptions());

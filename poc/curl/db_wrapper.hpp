@@ -24,15 +24,15 @@ class DBWrapper
 public:
     virtual ~DBWrapper() = default;
 
-    virtual void createTable() = 0;
-    virtual void insertEvent(int id, const std::string& event_data, const std::string& event_type) = 0;
-    virtual std::vector<Event> fetchPendingEvents(int limit) = 0;
-    virtual std::vector<Event> fetchAndMarkPendingEvents(int limit) = 0;
-    virtual void updateEventStatus(const std::vector<int>& event_ids, const std::string& status) = 0;
-    virtual void deleteEntriesWithStatus(const std::string& status) = 0;
-    virtual void updateEntriesStatus(const std::string& from_status, const std::string& to_status) = 0;
-    virtual int getPendingEventCount() = 0;
-    virtual void insertCommand(const std::string& command_data) = 0;
-    virtual Command fetchPendingCommand() = 0;
-    virtual void updateCommandStatus(int commandId) = 0;
+    virtual void CreateTable() = 0;
+    virtual void InsertEvent(int id, const std::string& event_data, const std::string& event_type) = 0;
+    virtual std::vector<Event> FetchPendingEvents(int limit) = 0;
+    virtual std::vector<Event> FetchAndMarkPendingEvents(int limit) = 0;
+    virtual void UpdateEventStatus(const std::vector<int>& event_ids, const std::string& status) = 0;
+    virtual void DeleteEntriesWithStatus(const std::string& status) = 0;
+    virtual void UpdateEntriesStatus(const std::string& from_status, const std::string& to_status) = 0;
+    virtual int GetPendingEventCount() = 0;
+    virtual void InsertCommand(const std::string& command_data) = 0;
+    virtual Command FetchPendingCommand() = 0;
+    virtual void UpdateCommandStatus(int commandId) = 0;
 };

@@ -27,7 +27,7 @@ public:
         }
     }
 
-    void createTable() override
+    void CreateTable() override
     {
         const char* sql = "CREATE TABLE IF NOT EXISTS events ("
                           "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -45,7 +45,7 @@ public:
         }
     }
 
-    void insertEvent(int id, const std::string& event_data, const std::string& event_type) override
+    void InsertEvent(int id, const std::string& event_data, const std::string& event_type) override
     {
         const char* sql = "INSERT INTO events (event_data, event_type) VALUES (?, ?);";
         sqlite3_stmt* stmt;
@@ -56,7 +56,7 @@ public:
         sqlite3_finalize(stmt);
     }
 
-    std::vector<Event> fetchPendingEvents(int limit) override
+    std::vector<Event> FetchPendingEvents(int limit) override
     {
         const char* sql = "SELECT id, event_data FROM events WHERE status = 'pending' LIMIT ?;";
         sqlite3_stmt* stmt;
@@ -74,7 +74,7 @@ public:
         return events;
     }
 
-    std::vector<Event> fetchAndMarkPendingEvents(int limit) override
+    std::vector<Event> FetchAndMarkPendingEvents(int limit) override
     {
         const char* select_sql = "SELECT id, event_data FROM events WHERE status = 'pending' LIMIT ?;";
         const char* update_sql = "UPDATE events SET status = 'processing' WHERE id = ?;";
@@ -104,7 +104,7 @@ public:
         return events;
     }
 
-    void updateEventStatus(const std::vector<int>& event_ids, const std::string& status) override
+    void UpdateEventStatus(const std::vector<int>& event_ids, const std::string& status) override
     {
         const std::string sql = "UPDATE events SET status = '" + status + "' WHERE id = ?;";
         sqlite3_stmt* stmt;
@@ -119,7 +119,7 @@ public:
         sqlite3_finalize(stmt);
     }
 
-    void deleteEntriesWithStatus(const std::string& status) override
+    void DeleteEntriesWithStatus(const std::string& status) override
     {
         const char* sql = "DELETE FROM events WHERE status = ?;";
         sqlite3_stmt* stmt;
@@ -133,7 +133,7 @@ public:
         sqlite3_finalize(stmt);
     }
 
-    void updateEntriesStatus(const std::string& from_status, const std::string& to_status) override
+    void UpdateEntriesStatus(const std::string& from_status, const std::string& to_status) override
     {
         const char* sql = "UPDATE events SET status = ? WHERE status = ?;";
         sqlite3_stmt* stmt;
@@ -148,7 +148,7 @@ public:
         sqlite3_finalize(stmt);
     }
 
-    int getPendingEventCount() override
+    int GetPendingEventCount() override
     {
         const char* sql = "SELECT COUNT(*) FROM events WHERE status = 'pending';";
         sqlite3_stmt* stmt;
@@ -163,15 +163,15 @@ public:
         return count;
     }
 
-    void insertCommand(const std::string& command_data) override {}
+    void InsertCommand(const std::string& command_data) override {}
 
-    Command fetchPendingCommand()
+    Command FetchPendingCommand()
     {
         Command command;
         return command;
     }
 
-    void updateCommandStatus(int commandId) {}
+    void UpdateCommandStatus(int commandId) {}
 
 private:
     sqlite3* db = nullptr;

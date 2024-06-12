@@ -139,7 +139,7 @@ private:
                 }
                 else if (command == "startcommands")
                 {
-                    client_.commandDispatcher->startCommandDispatcher();
+                    client_.commandDispatcher->StartCommandDispatcher();
                 }
                 else if (command == "get")
                 {
@@ -157,7 +157,7 @@ private:
                 else if (command == "createevent")
                 {
                     static int event = 0;
-                    client_.eventQueueMonitor->eventQueue->insertEvent(event++, "{\"key\": \"value\"}", "json");
+                    client_.eventQueueMonitor->eventQueue->InsertEvent(event++, "{\"key\": \"value\"}", "json");
                 }
                 else
                 {
