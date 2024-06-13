@@ -28,6 +28,12 @@ struct EventQueueMonitor
     {
         continueEventProcessing.store(false);
         Logger::log("EVENT QUEUE MONITOR", "Waiting for event queue thread to join");
+
+        if (dispatcher_thread && dispatcher_thread->joinable())
+        {
+            dispatcher_thread->join();
+        }
+
         for (auto& thread : eventDispatchThreads)
         {
             if (thread.joinable())
@@ -35,7 +41,7 @@ struct EventQueueMonitor
                 thread.join();
             }
         }
-        dispatcher_thread->join();
+
         dispatcher_thread.reset();
         eventQueue.reset();
         Logger::log("EVENT QUEUE MONITOR", "Destroyed");
