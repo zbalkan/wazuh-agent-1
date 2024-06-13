@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "logger.hpp"
+#include "db_wrapper.hpp"
 
 template<typename QueueDB>
 struct EventQueueMonitor
