@@ -34,16 +34,12 @@ struct EventQueueMonitor
             dispatcher_thread->join();
         }
 
-        for (auto& thread : eventDispatchThreads)
-        {
-            if (thread.joinable())
-            {
-                thread.join();
-            }
-        }
-
         dispatcher_thread.reset();
+
+        PerformCleanup();
+
         eventQueue.reset();
+
         Logger::log("EVENT QUEUE MONITOR", "Destroyed");
     }
 
@@ -51,7 +47,7 @@ struct EventQueueMonitor
     {
         auto last_dispatch_time = std::chrono::steady_clock::now();
 
-        while (continueEventProcessing.load())
+        while (continueEventProcessing.load() || (eventQueue && eventQueue->GetPendingEventCount() != 0))
         {
             PerformCleanup();
 
@@ -72,8 +68,8 @@ struct EventQueueMonitor
 
     void PerformCleanup()
     {
-        CleanUpDispatchedEvents();
         CleanUpJoinableThreads();
+        CleanUpDispatchedEvents();
     }
 
     bool ShouldDispatchEvents(const std::chrono::time_point<std::chrono::steady_clock>& last_dispatch_time)
