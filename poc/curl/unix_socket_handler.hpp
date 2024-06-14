@@ -131,7 +131,7 @@ private:
                 }
                 else if (command == "stateless")
                 {
-                    SendStatelessRequest(client_.url, client_.uuid, client_.token, "");
+                    SendStatelessRequest(client_.url, client_.uuid, client_.password, client_.token, "");
                 }
                 else if (command == "stopcommands")
                 {

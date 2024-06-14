@@ -75,7 +75,8 @@ void SendLoginRequest(const std::string& pUrl, const std::string& uuid, const st
 
 bool SendStatelessRequest(const std::string& pUrl,
                           const std::string& uuid,
-                          const std::string& token,
+                          const std::string& password,
+                          std::string& token,
                           const std::string& event)
 {
     try
@@ -96,10 +97,15 @@ bool SendStatelessRequest(const std::string& pUrl,
                 Logger::log("HTTP REQUEST] [STATELESS RESPONSE", response);
                 success = true;
             },
-            [&success](const std::string& error, const long code)
+            [&success, pUrl, uuid, password, &token](const std::string& error, const long code)
             {
                 Logger::log("HTTP REQUEST] [STATELESS RESPONSE", error + " with code " + std::to_string(code));
                 success = false;
+                if (code == 401)
+                {
+                    Logger::log("HTTP REQUEST] [STATELESS RESPONSE", "Retrying login");
+                    SendLoginRequest(pUrl, uuid, password, token);
+                }
             },
             "",
             HeadersWithToken);
@@ -139,6 +145,7 @@ SendCommandsRequest(const std::string& pUrl, const std::string& uuid, const std:
                 Logger::log("HTTP REQUEST] [COMMAND REQUEST FAILED", error + " with code " + std::to_string(code));
                 if (code == 401)
                 {
+                    Logger::log("HTTP REQUEST] [COMMAND REQUEST FAILED", "Retrying login");
                     SendLoginRequest(pUrl, uuid, password, token);
                 }
                 promise.set_value({false, error});

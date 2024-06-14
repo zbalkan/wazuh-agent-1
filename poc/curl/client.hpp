@@ -29,7 +29,7 @@ struct Client
         // Start queue monitoring
         eventQueueMonitor = std::make_unique<EventQueueMonitor<SQLiteWrapper>>(
             [this](const std::string& event)
-            { return SendStatelessRequest(this->url, this->uuid, this->token, event); });
+            { return SendStatelessRequest(this->url, this->uuid, this->password, this->token, event); });
     }
 
     void ReadCredentials()
