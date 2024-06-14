@@ -9,6 +9,8 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <nlohmann/json.hpp>
+
 
 template<typename CommandDB>
 struct CommandDispatcher
@@ -43,7 +45,16 @@ struct CommandDispatcher
         {
             if (const auto response = onCommand(); response.first)
             {
-                commandDb->InsertCommand(response.second);
+                auto jsonResponse = nlohmann::json::parse(response.second);
+                if (jsonResponse.contains("commands") && jsonResponse["commands"].is_array()) {
+                    for (const auto& command : jsonResponse["commands"]) {
+                        if (command.is_object()) {
+                            commandDb->InsertCommand(command.dump());
+                        }
+                    }
+                } else {
+                    std::cerr << "Error: 'commands' key not found or is not an array in the response" << std::endl;
+                }
             }
         }
     }
@@ -60,7 +71,7 @@ struct CommandDispatcher
                                 ", Data: " + pending_command.command_data);
                 commandDb->UpdateCommandStatus(pending_command.id);
             }
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 
@@ -72,7 +83,7 @@ struct CommandDispatcher
         dispatcher_thread = std::make_unique<std::thread>([this]() { Run(); });
     }
 
-    std::atomic<bool> keepCommandDispatcherRunning = true;
+    std::atomic<bool> keepCommandDispatcherRunning = false;
     std::unique_ptr<std::thread> dispatcher_thread;
     std::unique_ptr<std::thread> sender_thread;
     std::unique_ptr<CommandDB> commandDb;

@@ -53,16 +53,25 @@ void SendLoginRequest(const std::string& pUrl, const std::string& uuid, const st
 {
     try
     {
-        HttpURL url {pUrl + "/login"};
+        HttpURL url {pUrl + "/api/v1/login"};
         HTTPRequest& httpRequest = HTTPRequest::instance();
-        std::string data = uuidKey + uuid + "&" + passwordKey + password;
+        std::string data = "{" + uuidKey + "\"" + uuid + "\"" + "," + passwordKey + "\"" + password + + "\"""}";
         httpRequest.post(
             url,
             data,
             [&token](const std::string& response)
             {
                 Logger::log("HTTP REQUEST] [LOGIN RESPONSE", response);
-                token = response;
+                try {
+                    auto jsonResponse = nlohmann::json::parse(response);
+                    if (jsonResponse.contains("token")) {
+                        token = jsonResponse["token"].get<std::string>();
+                    } else {
+                        std::cerr << "Error: 'token' key not found in response" << std::endl;
+                    }
+                } catch (const nlohmann::json::parse_error& e) {
+                    std::cerr << "JSON parse error: " << e.what() << std::endl;
+                }
             },
             [](const std::string& error, const long code)
             { Logger::log("HTTP REQUEST] [LOGIN RESPONSE", error + " with code " + std::to_string(code)); });
@@ -85,9 +94,9 @@ bool SendStatelessRequest(const std::string& pUrl,
         auto HeadersWithToken = DEFAULT_HEADERS;
         HeadersWithToken.insert(authHeader);
 
-        HttpURL url {pUrl + "/stateless"};
+        HttpURL url {pUrl + "/api/v1/events/stateless"};
         HTTPRequest& httpRequest = HTTPRequest::instance();
-        std::string data = uuidKey + uuid + "&" + eventKey + event;
+        std::string data = "{\"events\":[{\"id\": 2,\"data\": \"event_data\", \"timestamp\": 1718275504}]}";
         bool success = false;
         httpRequest.post(
             url,
@@ -101,6 +110,8 @@ bool SendStatelessRequest(const std::string& pUrl,
             {
                 Logger::log("HTTP REQUEST] [STATELESS RESPONSE", error + " with code " + std::to_string(code));
                 success = false;
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
                 if (code == 401)
                 {
                     Logger::log("HTTP REQUEST] [STATELESS RESPONSE", "Retrying login");
@@ -123,11 +134,10 @@ SendCommandsRequest(const std::string& pUrl, const std::string& uuid, const std:
 {
     try
     {
-        std::string authHeader = "Authorization: " + bearerPrefix + token;
-        auto HeadersWithToken = DEFAULT_HEADERS;
-        HeadersWithToken.insert(authHeader);
+        const std::unordered_set<std::string> authHeader {"Authorization: " + bearerPrefix + token};
 
-        HttpURL url {pUrl + "/commands" + "?" + uuidKey + uuid};
+        // HttpURL url {pUrl + "/api/v1/commands" + "?" + uuidKey + uuid};
+        HttpURL url {pUrl + "/api/v1/commands"};
         HTTPRequest& httpRequest = HTTPRequest::instance();
 
         std::promise<std::pair<bool, std::string>> promise;
@@ -149,9 +159,10 @@ SendCommandsRequest(const std::string& pUrl, const std::string& uuid, const std:
                     SendLoginRequest(pUrl, uuid, password, token);
                 }
                 promise.set_value({false, error});
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             },
             "",
-            HeadersWithToken);
+            authHeader);
         return future.get();
     }
     catch (const std::exception& e)

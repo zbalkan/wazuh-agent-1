@@ -57,7 +57,7 @@ struct EventQueueMonitor
 
             if (!ShouldDispatchEvents(last_dispatch_time))
             {
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+                // std::this_thread::sleep_for(std::chrono::seconds(1));
                 continue;
             }
 
@@ -111,6 +111,18 @@ struct EventQueueMonitor
         // Create a new thread for each event batch to dispatch
         eventDispatchThreads.emplace_back([this, onEvent, event_data, event_ids]()
                                           { UpdateEventStatus(onEvent(event_data), event_ids); });
+        ++eventCount;
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = currentTime - startTime;
+
+        if (elapsed.count() > 0) {
+            std::cout << "Request per second: " << eventCount / elapsed.count() << std::endl;
+            // if (elapsed.count() >= 1) {
+            //     eventCount = 0;
+            //     startTime = std::chrono::high_resolution_clock::now();
+            // }
+        }
     }
 
     void UpdateEventStatus(bool success, const std::vector<int>& event_ids)
@@ -155,6 +167,8 @@ struct EventQueueMonitor
     std::vector<std::thread> eventDispatchThreads;
 
     // Configuration constants
-    const int batchSize = 10;       // Number of events to dispatch at once
-    const int dispatchInterval = 5; // Time interval in seconds
+    const int batchSize = 1;       // Number of events to dispatch at once
+    const int dispatchInterval = 0; // Time interval in seconds
+    std::chrono::time_point<std::chrono::high_resolution_clock> startTime = std::chrono::high_resolution_clock::now();
+    int eventCount = 0;
 };

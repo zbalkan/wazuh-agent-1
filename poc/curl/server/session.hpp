@@ -117,7 +117,7 @@ private:
         }
         else if (req_.method() == http::verb::post)
         {
-            if (req_.target() == "/login")
+            if (req_.target() == "/api/v1/login")
             {
                 handleLogin();
             }
@@ -125,7 +125,7 @@ private:
             {
                 handleStateless();
             }
-            else if (req_.target() == "/commands")
+            else if (req_.target() == "/api/v1/commands")
             {
                 res_.result(http::status::ok);
                 res_.body() = "Received commands post request";

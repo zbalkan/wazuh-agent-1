@@ -34,16 +34,18 @@ def simulate_event_insertion(idle_length):
     event_types = ["type1", "type2", "type3"]
 
     while True:
-        burst_length = random.randint(1, 20)
+        # burst_length = random.randint(1, 20)
+        burst_length = 1
         for _ in range(burst_length):
             event_data = generate_event_data()
             event_type = random.choice(event_types)
             insert_event(event_data, event_type)
-            print(f"Inserted event: {event_data}, {event_type} at {datetime.now()}")
-            time.sleep(random.uniform(0.1, 0.5))
+            #print(f"Inserted event: {event_data}, {event_type} at {datetime.now()}")
+            # time.sleep(random.uniform(0.1, 0.5))
+            time.sleep(0.00001)
 
-        print(f"idle period for {idle_length} seconds at {datetime.now()}")
-        time.sleep(idle_length)
+        #print(f"idle period for {idle_length} seconds at {datetime.now()}")
+        #time.sleep(idle_length)
 
 if __name__ == "__main__":
     idle_length = 5
