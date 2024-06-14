@@ -10,6 +10,7 @@
 
 #include "logger.hpp"
 #include "db_wrapper.hpp"
+#include "std_thread_manager.hpp"
 
 template<typename QueueDB>
 struct EventQueueMonitor
@@ -68,7 +69,7 @@ struct EventQueueMonitor
 
     void PerformCleanup()
     {
-        CleanUpJoinableThreads();
+        threadManager.CleanUpJoinableThreads();
         CleanUpDispatchedEvents();
     }
 
@@ -105,8 +106,8 @@ struct EventQueueMonitor
         event_data += "]";
 
         // Create a new thread for each event batch to dispatch
-        eventDispatchThreads.emplace_back([this, onEvent, event_data, event_ids]()
-                                          { UpdateEventStatus(onEvent(event_data), event_ids); });
+        threadManager.CreateThread([this, onEvent, event_data, event_ids]()
+                                   { UpdateEventStatus(onEvent(event_data), event_ids); });
     }
 
     void UpdateEventStatus(bool success, const std::vector<int>& event_ids)
@@ -128,27 +129,10 @@ struct EventQueueMonitor
         eventQueue->DeleteEntriesWithStatus("dispatched");
     }
 
-    void CleanUpJoinableThreads()
-    {
-        auto it = std::remove_if(eventDispatchThreads.begin(),
-                                 eventDispatchThreads.end(),
-                                 [](std::thread& t)
-                                 {
-                                     if (t.joinable())
-                                     {
-                                         t.join();
-                                         return true;
-                                     }
-                                     return false;
-                                 });
-
-        eventDispatchThreads.erase(it, eventDispatchThreads.end());
-    }
-
     std::atomic<bool> continueEventProcessing = true;
     std::unique_ptr<std::thread> dispatcher_thread;
     std::unique_ptr<QueueDB> eventQueue;
-    std::vector<std::thread> eventDispatchThreads;
+    StdThreadManager threadManager;
 
     // Configuration constants
     const int batchSize = 10;       // Number of events to dispatch at once
