@@ -135,6 +135,6 @@ struct EventQueueMonitor
     StdThreadManager threadManager;
 
     // Configuration constants
-    const int batchSize = 10;       // Number of events to dispatch at once
-    const int dispatchInterval = 5; // Time interval in seconds
+    int batchSize = 10;       // Number of events to dispatch at once
+    int dispatchInterval = 5; // Time interval in seconds
 };

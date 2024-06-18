@@ -10,8 +10,8 @@
 #include <thread>
 #include <vector>
 
-#include "db/sqlite_wrapper.hpp"
 #include "db/dummy_wrapper.hpp"
+#include "db/sqlite_wrapper.hpp"
 
 #include "logger.hpp"
 
@@ -30,9 +30,7 @@ public:
         monitor = std::make_unique<EventQueueMonitor<DummyWrapper>>(onEvent);
     }
 
-    void TearDown(const ::benchmark::State& state) override
-    {
-    }
+    void TearDown(const ::benchmark::State& state) override {}
 
     std::unique_ptr<EventQueueMonitor<DummyWrapper>> monitor;
     std::function<bool(const std::string&)> onEvent;
@@ -54,6 +52,56 @@ BENCHMARK_DEFINE_F(EventQueueMonitorFixture, DispatchPendingEvents)(benchmark::S
     monitor.reset();
 }
 
-BENCHMARK_REGISTER_F(EventQueueMonitorFixture, DispatchPendingEvents)->Arg(10)->Arg(100)->Arg(1000);
+BENCHMARK_REGISTER_F(EventQueueMonitorFixture, DispatchPendingEvents)
+    ->Arg(10)
+    ->Arg(100)
+    ->Arg(1000)
+    ->Arg(10000)
+    ->Arg(100000);
+
+class ColdStartEventQueueMonitorFixture : public benchmark::Fixture
+{
+public:
+    void SetUp(const ::benchmark::State& state) override
+    {
+        Logger::LOGGING_ENABLED = false;
+
+        onEvent = [](const std::string& event_data) -> bool
+        {
+            return true;
+        };
+
+        monitor = std::make_unique<EventQueueMonitor<DummyWrapper>>(onEvent);
+
+        for (int i = 0; i < 100000; ++i)
+        {
+            monitor->eventQueue->InsertEvent(i, "event_data", "event_type");
+        }
+    }
+
+    void TearDown(const ::benchmark::State& state) override {}
+
+    std::unique_ptr<EventQueueMonitor<DummyWrapper>> monitor;
+    std::function<bool(const std::string&)> onEvent;
+};
+
+BENCHMARK_DEFINE_F(ColdStartEventQueueMonitorFixture, DispatchPreLoadedPendingEvents)(benchmark::State& state)
+{
+    for (auto _ : state)
+    {
+        monitor->batchSize = state.range(0);
+    }
+
+    // We force the destruction of the EventQueueMonitor so all threads are joined
+    monitor.reset();
+}
+
+BENCHMARK_REGISTER_F(ColdStartEventQueueMonitorFixture, DispatchPreLoadedPendingEvents)
+    ->Arg(10)
+    ->Arg(100)
+    ->Arg(1000)
+    ->Arg(10000)
+    ->Arg(100000)
+    ->Arg(1000000);
 
 BENCHMARK_MAIN();
