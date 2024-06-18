@@ -1,0 +1,3 @@
+[submodule "poc/curl/wazuh-http-request"]
+	path = poc/curl/wazuh-http-request
+	url = https://github.com/wazuh/wazuh-http-request.git
