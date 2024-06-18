@@ -11,6 +11,8 @@
 #include <vector>
 
 #include "db/sqlite_wrapper.hpp"
+#include "db/dummy_wrapper.hpp"
+
 #include "logger.hpp"
 
 class EventQueueMonitorFixture : public benchmark::Fixture
@@ -25,15 +27,14 @@ public:
             return true;
         };
 
-        monitor = std::make_unique<EventQueueMonitor<SQLiteWrapper>>(onEvent);
+        monitor = std::make_unique<EventQueueMonitor<DummyWrapper>>(onEvent);
     }
 
     void TearDown(const ::benchmark::State& state) override
     {
-        monitor.reset();
     }
 
-    std::unique_ptr<EventQueueMonitor<SQLiteWrapper>> monitor;
+    std::unique_ptr<EventQueueMonitor<DummyWrapper>> monitor;
     std::function<bool(const std::string&)> onEvent;
 };
 
@@ -48,6 +49,9 @@ BENCHMARK_DEFINE_F(EventQueueMonitorFixture, DispatchPendingEvents)(benchmark::S
             monitor->eventQueue->InsertEvent(i, "event_data", "event_type");
         }
     }
+
+    // We force the destruction of the EventQueueMonitor so all threads are joined
+    monitor.reset();
 }
 
 BENCHMARK_REGISTER_F(EventQueueMonitorFixture, DispatchPendingEvents)->Arg(10)->Arg(100)->Arg(1000);
