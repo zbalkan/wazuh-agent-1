@@ -6,15 +6,17 @@
 #include <atomic>
 #include <vector>
 #include <algorithm>
+#include <mutex>
+
 
 class DummyWrapper : public DBWrapper<int>
 {
 public:
     DummyWrapper()
     {
-        events.reserve(1000);
+        events.reserve(1000000);
 
-        for (int i = 0; i < 1000; i++)
+        for (int i = 0; i < 1000000; i++)
         {
             events.emplace_back(Event {i, "event_data", "event_type", "pending"});
         }
@@ -35,6 +37,8 @@ public:
 
     std::vector<Event> FetchPendingEvents(int limit) override
     {
+        std::lock_guard<std::mutex> lock(events_mutex);
+
         limit = std::min(limit, pending.load());
         pending -= limit;
         std::vector<Event> result(events.begin(), events.begin() + limit);
@@ -43,6 +47,8 @@ public:
 
     std::vector<Event> FetchAndMarkPendingEvents(int limit) override
     {
+        std::lock_guard<std::mutex> lock(events_mutex);
+
         limit = std::min(limit, pending.load());
         pending -= limit;
         processing += limit;
@@ -55,18 +61,18 @@ public:
     {
         if (status == "dispatched")
         {
-            processing -= event_ids.size();
-            dispatched += event_ids.size();
+            processing.fetch_sub(event_ids.size());
+            dispatched.fetch_add(event_ids.size());
         }
         if (status == "processing")
         {
-            pending -= event_ids.size();
-            processing += event_ids.size();
+            pending.fetch_sub(event_ids.size());
+            processing.fetch_add(event_ids.size());
         }
         if (status == "pending")
         {
-            processing -= event_ids.size();
-            pending += event_ids.size();
+            processing.fetch_sub(event_ids.size());
+            pending.fetch_add(event_ids.size());
         }
     }
 
@@ -90,33 +96,33 @@ public:
     {
         if (from_status == "dispatched" && to_status == "processing")
         {
-            processing += dispatched;
+            processing.fetch_add(dispatched);
             dispatched = 0;
         }
         if (from_status == "dispatched" && to_status == "pending")
         {
-            pending += dispatched;
+            pending.fetch_add(dispatched);
             dispatched = 0;
         }
         if (from_status == "processing" && to_status == "pending")
         {
-            pending += processing;
+            pending.fetch_add(processing);
             processing = 0;
         }
         if (from_status == "processing" && to_status == "dispatched")
         {
-            dispatched += processing;
+            dispatched.fetch_add(processing);
             processing = 0;
         }
         if (from_status == "pending" && to_status == "processing")
         {
-            processing += pending;
+            processing.fetch_add(pending);
             pending = 0;
         }
 
         if (from_status == "pending" && to_status == "dispatched")
         {
-            dispatched += pending;
+            dispatched.fetch_add(pending);
             pending = 0;
         }
     }
@@ -141,4 +147,5 @@ private:
     std::atomic<int> processing = 0;
     std::atomic<int> dispatched = 0;
     std::vector<Event> events;
+    std::mutex events_mutex;
 };
