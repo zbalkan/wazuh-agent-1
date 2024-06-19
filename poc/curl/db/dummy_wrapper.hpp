@@ -12,16 +12,6 @@
 class DummyWrapper : public DBWrapper<int>
 {
 public:
-    DummyWrapper()
-    {
-        events.reserve(1'000'000);
-
-        for (int i = 0; i < 1'000'000; i++)
-        {
-            events.emplace_back(Event {i, "event_data", "event_type", "pending"});
-        }
-    }
-
     ~DummyWrapper() override
     {
     }
@@ -32,6 +22,7 @@ public:
 
     void InsertEvent(int id, const std::string& event_data, const std::string& event_type) override
     {
+        events.emplace_back(Event {id, "event_data", "event_type", "pending"});
         pending++;
     }
 
