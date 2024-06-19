@@ -79,9 +79,12 @@ struct EventQueueMonitor
     bool ShouldDispatchEvents(const std::chrono::time_point<std::chrono::steady_clock>& last_dispatch_time)
     {
         const auto current_time = std::chrono::steady_clock::now();
-        return eventQueue->GetPendingEventCount() >= batchSize ||
-               std::chrono::duration_cast<std::chrono::seconds>(current_time - last_dispatch_time).count() >=
+
+        // The dispatch interval may not be necessary during PoC testing
+        [[maybe_unused]] const auto hasDispatchIntervalPassed = std::chrono::duration_cast<std::chrono::seconds>(current_time - last_dispatch_time).count() >=
                    dispatchInterval;
+
+        return eventQueue->GetPendingEventCount() > 0;
     }
 
     void DispatchPendingEvents(const std::function<bool(const std::string&)>& onEvent,
