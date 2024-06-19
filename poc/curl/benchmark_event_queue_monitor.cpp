@@ -18,90 +18,67 @@
 class EventQueueMonitorFixture : public benchmark::Fixture
 {
 public:
-    void SetUp(const ::benchmark::State& state) override
+    EventQueueMonitorFixture()
     {
         Logger::LOGGING_ENABLED = false;
-
-        onEvent = [](const std::string& event_data) -> bool
-        {
-            return true;
-        };
-
-        monitor = std::make_unique<EventQueueMonitor<DummyWrapper>>(onEvent);
     }
-
-    void TearDown(const ::benchmark::State& state) override {}
 
     std::unique_ptr<EventQueueMonitor<DummyWrapper>> monitor;
-    std::function<bool(const std::string&)> onEvent;
 };
 
-BENCHMARK_DEFINE_F(EventQueueMonitorFixture, DispatchPendingEvents)(benchmark::State& state)
+BENCHMARK_DEFINE_F(EventQueueMonitorFixture, DispatchPreLoadedPendingEventsWithDifferentBatchSizes)(benchmark::State& state)
 {
+    std::atomic<int> counter = 0;
+
     for (auto _ : state)
     {
-        std::vector<Event> pending_events(state.range(0));
+        monitor = std::make_unique<EventQueueMonitor<DummyWrapper>>([](const std::string&) { return false; });
 
-        for (int i = 0; i < state.range(0); ++i)
-        {
-            monitor->eventQueue->InsertEvent(i, "event_data", "event_type");
-        }
-    }
+        // First we stop the event loop so we can control that it starts with a preloaded db
+        monitor->continueEventProcessing = false;
 
-    // We force the destruction of the EventQueueMonitor so all threads are joined
-    monitor.reset();
-}
+        // When all events are processed we stop the event loop
+        monitor->shouldStopRunningIfQueueIsEmpty = true;
 
-BENCHMARK_REGISTER_F(EventQueueMonitorFixture, DispatchPendingEvents)
-    ->Arg(10)
-    ->Arg(100)
-    ->Arg(1000)
-    ->Arg(10000)
-    ->Arg(100000);
-
-class ColdStartEventQueueMonitorFixture : public benchmark::Fixture
-{
-public:
-    void SetUp(const ::benchmark::State& state) override
-    {
-        Logger::LOGGING_ENABLED = false;
-
-        onEvent = [](const std::string& event_data) -> bool
-        {
-            return true;
-        };
-
-        monitor = std::make_unique<EventQueueMonitor<DummyWrapper>>(onEvent);
-
+        // Preload db with events
         for (int i = 0; i < 100000; ++i)
         {
             monitor->eventQueue->InsertEvent(i, "event_data", "event_type");
         }
-    }
 
-    void TearDown(const ::benchmark::State& state) override {}
-
-    std::unique_ptr<EventQueueMonitor<DummyWrapper>> monitor;
-    std::function<bool(const std::string&)> onEvent;
-};
-
-BENCHMARK_DEFINE_F(ColdStartEventQueueMonitorFixture, DispatchPreLoadedPendingEvents)(benchmark::State& state)
-{
-    for (auto _ : state)
-    {
+        // Benchmark the time it takes to dispatch all the events
+        auto start = std::chrono::high_resolution_clock::now();
         monitor->batchSize = state.range(0);
-    }
+        monitor->continueEventProcessing = true;
+        monitor->Run(
+            [&counter](const std::string& event_data) -> bool
+            {
+                // Avoid optimizing out the counter
+                // maybe this is not necessary
+                benchmark::DoNotOptimize(counter);
+                counter++;
+                benchmark::ClobberMemory();
+                // std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                return true;
+            });
 
-    // We force the destruction of the EventQueueMonitor so all threads are joined
-    monitor.reset();
+        // We include the reset as part of the iteration time so we wait
+        // for all the threads to finish
+        monitor.reset();
+        auto end = std::chrono::high_resolution_clock::now();
+
+        auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+        state.SetIterationTime(elapsed_seconds.count());
+    }
 }
 
-BENCHMARK_REGISTER_F(ColdStartEventQueueMonitorFixture, DispatchPreLoadedPendingEvents)
+BENCHMARK_REGISTER_F(EventQueueMonitorFixture, DispatchPreLoadedPendingEventsWithDifferentBatchSizes)
+    ->Unit(benchmark::kMillisecond)
+    ->Iterations(100)
     ->Arg(10)
     ->Arg(100)
-    ->Arg(1000)
-    ->Arg(10000)
-    ->Arg(100000)
-    ->Arg(1000000);
+    ->Arg(1'000)
+    ->Arg(10'000)
+    ->Arg(100'000);
 
 BENCHMARK_MAIN();

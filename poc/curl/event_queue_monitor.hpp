@@ -50,14 +50,22 @@ struct EventQueueMonitor
 
         while (continueEventProcessing.load())
         {
-            PerformCleanup();
+            // This clean up should be performed on another thread, possibly by the ThreadManager
+            // otherwise we are creating threads and we immediately wait for them to finish
+            // making the thread creation pointless
+            // PerformCleanup();
 
             if (!ShouldDispatchEvents(last_dispatch_time))
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                // Stop event loop if no more events are found (useful for testing)
-                // continueEventProcessing.store(false);
+                if (shouldStopRunningIfQueueIsEmpty)
+                {
+                    // Stop event loop if no more events are found (useful for testing)
+                    continueEventProcessing.store(false);
+                }
+                else
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                }
                 continue;
             }
 
@@ -141,6 +149,7 @@ struct EventQueueMonitor
     StdThreadManager threadManager;
 
     // Configuration constants
+    bool shouldStopRunningIfQueueIsEmpty = false;
     int batchSize = 10;       // Number of events to dispatch at once
     int dispatchInterval = 5; // Time interval in seconds
 };
