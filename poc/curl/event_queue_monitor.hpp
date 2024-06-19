@@ -48,7 +48,7 @@ struct EventQueueMonitor
     {
         auto last_dispatch_time = std::chrono::steady_clock::now();
 
-        while (continueEventProcessing.load() || (eventQueue && eventQueue->GetPendingEventCount() != 0))
+        while (continueEventProcessing.load())
         {
             PerformCleanup();
 
