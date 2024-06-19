@@ -54,7 +54,10 @@ struct EventQueueMonitor
 
             if (!ShouldDispatchEvents(last_dispatch_time))
             {
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                // Stop event loop if no more events are found (useful for testing)
+                // continueEventProcessing.store(false);
                 continue;
             }
 
