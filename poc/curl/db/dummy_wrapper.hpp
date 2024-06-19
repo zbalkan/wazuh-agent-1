@@ -14,9 +14,9 @@ class DummyWrapper : public DBWrapper<int>
 public:
     DummyWrapper()
     {
-        events.reserve(1000000);
+        events.reserve(1'000'000);
 
-        for (int i = 0; i < 1000000; i++)
+        for (int i = 0; i < 1'000'000; i++)
         {
             events.emplace_back(Event {i, "event_data", "event_type", "pending"});
         }
@@ -39,8 +39,14 @@ public:
     {
         std::lock_guard<std::mutex> lock(events_mutex);
 
+        if (pending.load() == 0)
+        {
+            return {};
+        }
+
         limit = std::min(limit, pending.load());
-        pending -= limit;
+        pending.fetch_sub(limit);
+
         std::vector<Event> result(events.begin(), events.begin() + limit);
         return result;
     }
@@ -49,9 +55,14 @@ public:
     {
         std::lock_guard<std::mutex> lock(events_mutex);
 
+        if (pending.load() == 0)
+        {
+            return {};
+        }
+
         limit = std::min(limit, pending.load());
-        pending -= limit;
-        processing += limit;
+        pending.fetch_sub(limit);
+        processing.fetch_add(limit);
 
         std::vector<Event> result(events.begin(), events.begin() + limit);
         return result;
