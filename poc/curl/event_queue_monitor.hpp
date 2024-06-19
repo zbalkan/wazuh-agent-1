@@ -8,8 +8,8 @@
 #include <thread>
 #include <vector>
 
-#include "logger.hpp"
 #include "db_wrapper.hpp"
+#include "logger.hpp"
 #include "std_thread_manager.hpp"
 
 template<typename QueueDB>
