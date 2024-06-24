@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(CurlExample)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 
@@ -48,9 +48,6 @@ find_package(OpenSSL REQUIRED)
 # Find JWT-CPP
 find_path(JWT_CPP_INCLUDE_DIRS "jwt-cpp/base.h" HINTS ${CMAKE_CURRENT_LIST_DIR}/../vcpkg/installed/${VCPKG_TARGET_TRIPLET}/include)
 
-# Find LibUV
-set(LibUV_DIR "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-linux/share/libuv")
-
 # Find Google Benchmark
 set(benchmark_DIR "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-linux/share/benchmark")
 find_package(benchmark CONFIG REQUIRED)
@@ -67,8 +64,8 @@ add_executable(client client_main.cpp)
 target_include_directories(server PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 target_include_directories(client PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 
-target_link_libraries(server Boost::system ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} ${SQLite3_LIBRARIES} RocksDB::rocksdb OpenSSL::SSL OpenSSL::Crypto urlrequest uv)
-target_link_libraries(client ${CURL_LIBRARIES} ${ZLIB_LIBRARIES} ${SQLite3_LIBRARIES} RocksDB::rocksdb OpenSSL::SSL OpenSSL::Crypto urlrequest uv)
+target_link_libraries(server Boost::system ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} ${SQLite3_LIBRARIES} RocksDB::rocksdb OpenSSL::SSL OpenSSL::Crypto urlrequest)
+target_link_libraries(client ${CURL_LIBRARIES} ${ZLIB_LIBRARIES} ${SQLite3_LIBRARIES} RocksDB::rocksdb OpenSSL::SSL OpenSSL::Crypto urlrequest)
 
 add_executable(benchmark_tests benchmark_event_queue_monitor.cpp)
 target_link_libraries(benchmark_tests benchmark::benchmark benchmark::benchmark_main ${SQLite3_LIBRARIES})
