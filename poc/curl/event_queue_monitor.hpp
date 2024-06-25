@@ -10,7 +10,7 @@
 
 #include "db_wrapper.hpp"
 #include "logger.hpp"
-#include "std_thread_manager.hpp"
+#include "asio_thread_manager.hpp"
 
 template<typename QueueDB>
 struct EventQueueMonitor
@@ -146,7 +146,7 @@ struct EventQueueMonitor
     std::atomic<bool> continueEventProcessing = true;
     std::unique_ptr<std::thread> dispatcher_thread;
     std::unique_ptr<QueueDB> eventQueue;
-    StdThreadManager threadManager;
+    AsioThreadManager threadManager;
 
     // Configuration constants
     bool shouldStopRunningIfQueueIsEmpty = false;
