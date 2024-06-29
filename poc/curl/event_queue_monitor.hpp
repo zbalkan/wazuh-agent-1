@@ -11,6 +11,8 @@
 #include "db_wrapper.hpp"
 #include "logger.hpp"
 #include "asio_thread_manager.hpp"
+#include "cppcoro/static_thread_pool.hpp"
+#include "task.hpp"
 
 template<typename QueueDB>
 struct EventQueueMonitor
@@ -22,6 +24,7 @@ struct EventQueueMonitor
         eventQueue->UpdateEntriesStatus("processing", "pending");
 
         Logger::log("EVENT QUEUE MONITOR", "Starting event queue thread");
+        m_threadpool = std::make_unique<cppcoro::static_thread_pool>();
         dispatcher_thread = std::make_unique<std::thread>([this, onEvent]() { Run(onEvent); });
     }
 
@@ -29,6 +32,8 @@ struct EventQueueMonitor
     {
         continueEventProcessing.store(false);
         Logger::log("EVENT QUEUE MONITOR", "Waiting for event queue thread to join");
+
+        m_threadpool.reset();
 
         if (dispatcher_thread && dispatcher_thread->joinable())
         {
@@ -80,7 +85,6 @@ struct EventQueueMonitor
 
     void PerformCleanup()
     {
-        threadManager.CleanUpJoinableThreads();
         CleanUpDispatchedEvents();
     }
 
@@ -119,9 +123,7 @@ struct EventQueueMonitor
 
         event_data += "]";
 
-        // Create a new thread for each event batch to dispatch
-        threadManager.CreateThread([this, onEvent, event_data, event_ids]()
-                                   { UpdateEventStatus(onEvent(event_data), event_ids); });
+        auto Task = CoroDispatch(event_data, event_ids, onEvent);
     }
 
     void UpdateEventStatus(bool success, const std::vector<int>& event_ids)
@@ -136,6 +138,12 @@ struct EventQueueMonitor
         }
     }
 
+    task CoroDispatch(std::string event_data, std::vector<int> event_ids, std::function<bool(const std::string&)> onEvent)
+    {
+        co_await m_threadpool->schedule();
+        UpdateEventStatus(onEvent(event_data), event_ids);
+    }
+
     void CleanUpDispatchedEvents()
     {
         // Cleanup dispatched events
@@ -146,7 +154,7 @@ struct EventQueueMonitor
     std::atomic<bool> continueEventProcessing = true;
     std::unique_ptr<std::thread> dispatcher_thread;
     std::unique_ptr<QueueDB> eventQueue;
-    AsioThreadManager threadManager;
+    std::unique_ptr<cppcoro::static_thread_pool> m_threadpool;
 
     // Configuration constants
     bool shouldStopRunningIfQueueIsEmpty = false;

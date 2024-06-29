@@ -65,9 +65,8 @@ BENCHMARK_DEFINE_F(EventQueueMonitorFixture, Dispatch200000PreLoadedPendingEvent
 
         // We include the reset as part of the iteration time so we wait
         // for all the threads to finish
-        monitor->threadManager.JoinAll();
-        auto end = std::chrono::high_resolution_clock::now();
         monitor.reset();
+        auto end = std::chrono::high_resolution_clock::now();
 
         auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
         state.SetIterationTime(elapsed_seconds.count());
@@ -112,9 +111,8 @@ BENCHMARK_DEFINE_F(EventQueueMonitorFixture, DispatchPreLoadedPendingEventsWithF
 
         // We include the reset as part of the iteration time so we wait
         // for all the threads to finish
-        monitor->threadManager.JoinAll();
-        auto end = std::chrono::high_resolution_clock::now();
         monitor.reset();
+        auto end = std::chrono::high_resolution_clock::now();
 
         auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
         state.SetIterationTime(elapsed_seconds.count());
@@ -171,9 +169,8 @@ BENCHMARK_DEFINE_F(EventQueueMonitorFixture, Dispatch100000PreLoadedPendingEvent
 
         // We include the reset as part of the iteration time so we wait
         // for all the threads to finish
-        monitor->threadManager.JoinAll();
-        auto end = std::chrono::high_resolution_clock::now();
         monitor.reset();
+        auto end = std::chrono::high_resolution_clock::now();
 
         auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
         state.SetIterationTime(elapsed_seconds.count());

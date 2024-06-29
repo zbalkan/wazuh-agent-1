@@ -58,8 +58,15 @@ include_directories(${CMAKE_SOURCE_DIR}/external)
 
 add_subdirectory(wazuh-http-request)
 
+set(CPPCORO_SOURCES
+    cppcoro/static_thread_pool.cpp
+    cppcoro/spin_mutex.cpp
+    cppcoro/spin_wait.cpp
+    cppcoro/auto_reset_event.cpp
+)
+
 add_executable(server server.cpp)
-add_executable(client client_main.cpp)
+add_executable(client client_main.cpp ${CPPCORO_SOURCES})
 
 target_include_directories(server PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 target_include_directories(client PRIVATE ${JWT_CPP_INCLUDE_DIRS})
@@ -67,5 +74,5 @@ target_include_directories(client PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 target_link_libraries(server Boost::system ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} ${SQLite3_LIBRARIES} RocksDB::rocksdb OpenSSL::SSL OpenSSL::Crypto urlrequest)
 target_link_libraries(client ${CURL_LIBRARIES} ${ZLIB_LIBRARIES} ${SQLite3_LIBRARIES} RocksDB::rocksdb OpenSSL::SSL OpenSSL::Crypto urlrequest)
 
-add_executable(benchmark_tests benchmark_event_queue_monitor.cpp)
+add_executable(benchmark_tests benchmark_event_queue_monitor.cpp ${CPPCORO_SOURCES})
 target_link_libraries(benchmark_tests benchmark::benchmark benchmark::benchmark_main ${SQLite3_LIBRARIES})
