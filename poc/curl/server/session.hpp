@@ -100,7 +100,7 @@ private:
         res_.version(req_.version());
         res_.keep_alive(req_.keep_alive());
         res_.set(http::field::server, "Boost.Beast");
-        res_.set(http::field::content_type, "text/plain");
+        res_.set(http::field::content_type, "json");
 
         if (req_.method() == http::verb::get)
         {
@@ -117,7 +117,7 @@ private:
         }
         else if (req_.method() == http::verb::post)
         {
-            if (req_.target() == "/login")
+            if (req_.target() == "/authentication")
             {
                 handleLogin();
             }
@@ -171,32 +171,57 @@ private:
 
     void handleLogin()
     {
-        auto body = req_.body();
-        auto uuidPos = body.find(uuidKey);
-        auto passwordPos = body.find(passwordKey);
-        if (uuidPos != std::string::npos && passwordPos != std::string::npos)
+        json body;
+        std::string uuid;
+        std::string password;
+        bool validRequest = true;
+
+        try
         {
-            std::string uuid = body.substr(uuidPos + uuidKey.length(), passwordPos - uuidPos - uuidKey.length() - 1);
-            std::string password = body.substr(passwordPos + passwordKey.length());
+            body = json::parse(req_.body());
 
-            if (verifyPassword(uuid, password))
+            if (body.contains(uuidKey) && body.at(uuidKey).is_string())
             {
-                std::string newToken = createToken();
-                validTokens[uuid] = {newToken, std::time(nullptr) + 3600}; // 1 hour expiry
-
-                res_.result(http::status::ok);
-                res_.body() = newToken;
+                uuid = body[uuidKey].get<std::string>();
             }
             else
             {
-                res_.result(http::status::unauthorized);
-                res_.body() = "Invalid or expired password";
+                validRequest = false;
             }
+
+            if (body.contains(passwordKey) && body.at(passwordKey).is_string())
+            {
+                password = body[passwordKey].get<std::string>();
+            }
+            else
+            {
+                validRequest = false;
+            }
+
+            if (!validRequest)
+            {
+                res_.result(http::status::bad_request);
+                res_.body() = "Invalid request format";
+                return;
+            }
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "Error parsing JSON body: " << e.what() << std::endl;
+        }
+
+        if (verifyPassword(uuid, password))
+        {
+            std::string newToken = createToken();
+            validTokens[uuid] = {newToken, std::time(nullptr) + 3600}; // 1 hour expiry
+
+            res_.result(http::status::ok);
+            res_.body() = newToken;
         }
         else
         {
-            res_.result(http::status::bad_request);
-            res_.body() = "Invalid request format";
+            res_.result(http::status::unauthorized);
+            res_.body() = "Invalid or expired password";
         }
     }
 
@@ -331,29 +356,53 @@ private:
         }
 
         std::string token = authHeader.substr(bearerPrefix.length());
-
-        auto body = req_.body();
-        auto uuidPos = body.find(uuidKey);
-        auto namePos = body.find(nameKey);
-        if (uuidPos != std::string::npos)
+        std::string uuid;
+        std::string name;
+        json body;
+        bool validRequest = true;
+        try
         {
-            std::string uuid = body.substr(uuidPos + uuidKey.length(), namePos - uuidPos - uuidKey.length() - 1);
+            body = json::parse(req_.body());
 
-            if (token == validTokens[uuid].token && verifyToken(token))
+            if (body.contains(uuidKey) && body.at(uuidKey).is_string())
             {
-                res_.result(http::status::ok);
-                res_.body() = "agent_key";
+                uuid = body[uuidKey].get<std::string>();
             }
             else
             {
-                res_.result(http::status::unauthorized);
-                res_.body() = "Invalid or expired token";
+                validRequest = false;
             }
+
+            if (body.contains(nameKey) && body.at(nameKey).is_string())
+            {
+                name = body[nameKey].get<std::string>();
+            }
+            else
+            {
+                validRequest = false;
+            }
+
+            if (!validRequest)
+            {
+                res_.result(http::status::bad_request);
+                res_.body() = "Invalid request format";
+                return;
+            }
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "Error parsing JSON body: " << e.what() << std::endl;
+        }
+
+        if (token == validTokens[uuid].token && verifyToken(token))
+        {
+            res_.result(http::status::ok);
+            res_.body() = "agent_key";
         }
         else
         {
-            res_.result(http::status::bad_request);
-            res_.body() = "Invalid request format";
+            res_.result(http::status::unauthorized);
+            res_.body() = "Invalid or expired token";
         }
     }
 };

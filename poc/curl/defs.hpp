@@ -4,12 +4,12 @@
 
 #include <string>
 
-const std::string uuidKey = "uuid=";
-const std::string tokenKey = "token=";
-const std::string eventKey = "event=";
-const std::string passwordKey = "password=";
-const std::string nameKey = "name=";
-const std::string ipKey = "ip=";
+const std::string uuidKey = "uuid";
+const std::string tokenKey = "token";
+const std::string eventKey = "event";
+const std::string passwordKey = "password";
+const std::string nameKey = "name";
+const std::string ipKey = "ip";
 const std::string bearerPrefix = "Bearer ";
 
 const std::string kURL = "http://localhost:8080";
