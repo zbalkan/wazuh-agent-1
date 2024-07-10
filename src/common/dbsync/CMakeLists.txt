@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.12.4)
 
+# Set the path to vcpkg
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+  if(DEFINED ENV{VCPKG_ROOT})
+    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+  else()
+    message(FATAL_ERROR "VCPKG_ROOT environment variable is not set")
+  endif()
+endif()
+
 project(dbsync)
 
 enable_testing()
@@ -8,8 +17,8 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-get_filename_component(SHARED_MODULES ${CMAKE_SOURCE_DIR}/../ ABSOLUTE)
-get_filename_component(SRC_FOLDER     ${CMAKE_SOURCE_DIR}/../../ ABSOLUTE)
+get_filename_component(COMMON     ${CMAKE_SOURCE_DIR}/../ ABSOLUTE)
+get_filename_component(SRC_FOLDER ${CMAKE_SOURCE_DIR}/../../ ABSOLUTE)
 
 if(COVERITY)
   add_definitions(-D__GNUC__=8)
@@ -36,13 +45,19 @@ if(APPLE)
   set(CMAKE_MACOSX_RPATH 1)
 endif(APPLE)
 
-include_directories(${SRC_FOLDER}/external/sqlite/)
-include_directories(${SRC_FOLDER}/external/nlohmann/)
-include_directories(${SRC_FOLDER}/external/cJSON/)
+find_package(unofficial-sqlite3 CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(cJSON CONFIG REQUIRED)
+
 include_directories(${CMAKE_SOURCE_DIR}/include/)
 include_directories(${CMAKE_SOURCE_DIR}/src/)
-include_directories(${SHARED_MODULES}/utils/)
-include_directories(${SHARED_MODULES}/common/)
+include_directories(${COMMON})
+include_directories(${COMMON}/mapWrapper/include/)
+include_directories(${COMMON}/pipelineHelper/include/)
+include_directories(${COMMON}/stringHelper/include/)
+include_directories(${COMMON}/threadDispatcher/include/)
+include_directories(${COMMON}/utils/)
+
 
 if(CMAKE_SYSTEM_NAME STREQUAL "HP-UX")
   link_directories(${INSTALL_PREFIX}/lib)
@@ -52,8 +67,6 @@ else()
 endif(CMAKE_SYSTEM_NAME STREQUAL "HP-UX")
 
 link_directories(${SRC_FOLDER})
-link_directories(${SRC_FOLDER}/external/sqlite/)
-link_directories(${SRC_FOLDER}/external/cJSON/)
 
 file(GLOB DBSYNC_SRC
     "${CMAKE_SOURCE_DIR}/src/*.cpp"
@@ -78,7 +91,7 @@ elseif(UNIX AND NOT APPLE)
   endif(NOT CMAKE_SYSTEM_NAME STREQUAL "AIX" AND NOT CMAKE_SYSTEM_NAME STREQUAL "HP-UX")
 endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
-target_link_libraries(dbsync wazuhext)
+target_link_libraries(dbsync unofficial::sqlite3::sqlite3 nlohmann_json::nlohmann_json cjson)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   if(CMAKE_SYSTEM_NAME STREQUAL "AIX")
