@@ -27,7 +27,6 @@ namespace urls = boost::urls;
 using tcp = net::ip::tcp;
 using json = nlohmann::json;
 
-
 class session : public std::enable_shared_from_this<session>
 {
     tcp::socket socket_;
@@ -237,50 +236,66 @@ private:
         }
 
         std::string token = authHeader.substr(bearerPrefix.length());
+        std::string uuid;
+        json events;
+        json body;
+        bool validRequest = true;
 
-        auto body = req_.body();
-        auto uuidPos = body.find(uuidKey);
-        auto eventPos = body.find(eventKey);
-        if (uuidPos != std::string::npos)
+        try
         {
-            std::string uuid = body.substr(uuidPos + uuidKey.length(), eventPos - uuidPos - uuidKey.length() - 1);
+            body = json::parse(req_.body());
 
-            if (token == validTokens[uuid].token && verifyToken(token))
+            if (body.contains(uuidKey) && body.at(uuidKey).is_string())
             {
-                if (eventPos != std::string::npos)
-                {
-                    eventPos += eventKey.length();
-                    std::size_t end_pos = body.find("&", eventPos);
-                    std::string event_data = body.substr(eventPos, end_pos - eventPos);
-
-                    try
-                    {
-                        json parsed_json = json::parse(event_data);
-                        std::cout << "\nParsed JSON Data:" << std::endl;
-                        std::cout << parsed_json.dump(4) << std::endl;
-                    }
-                    catch (json::parse_error& e)
-                    {
-                        std::cerr << "Failed to parse JSON: " << e.what() << std::endl;
-                    }
-                }
-                else
-                {
-                    std::cerr << "Event data not found in the request." << std::endl;
-                }
-                res_.result(http::status::ok);
-                res_.body() = "Stateless post request received";
+                uuid = body[uuidKey].get<std::string>();
             }
             else
             {
-                res_.result(http::status::unauthorized);
-                res_.body() = "Invalid or expired token";
+                validRequest = false;
             }
+
+            if (body.contains(eventKey) && body[eventKey].is_object() && body[eventKey].contains(eventsKey) &&
+                body[eventKey][eventsKey].is_array())
+            {
+                events = body[eventKey][eventsKey].dump();
+            }
+            else
+            {
+                validRequest = false;
+            }
+
+            if (!validRequest)
+            {
+                res_.result(http::status::bad_request);
+                res_.body() = "Invalid request format";
+                return;
+            }
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "Error parsing JSON body: " << e.what() << std::endl;
+        }
+
+        if (token == validTokens[uuid].token && verifyToken(token))
+        {
+
+            try
+            {
+                std::cout << "\nParsed JSON Data:" << std::endl;
+                std::cout << events << std::endl;
+            }
+            catch (json::parse_error& e)
+            {
+                std::cerr << "Failed to parse JSON: " << e.what() << std::endl;
+            }
+
+            res_.result(http::status::ok);
+            res_.body() = "Stateless post request received";
         }
         else
         {
-            res_.result(http::status::bad_request);
-            res_.body() = "Invalid request format";
+            res_.result(http::status::unauthorized);
+            res_.body() = "Invalid or expired token";
         }
     }
 
@@ -307,7 +322,7 @@ private:
         {
             for (auto param : url_view.params())
             {
-                if (param.key == "uuid")
+                if (param.key == uuidKey)
                 {
                     uuid = std::string(param.value);
                     break;
@@ -327,9 +342,13 @@ private:
                 else
                 {
                     res_.result(http::status::ok);
-                    res_.body() = "{\"origin\" : {\"module\" : \"upgrade_module\"}, \"command\": "
-                                  "\"upgrade_update_status\", \"parameters\" : {\"agents\" : [20], \"error\"  : 0, "
-                                  "\"data\"  : \"Upgrade Successful\", \"status\": \"Done\"}}";
+                    res_.body() = "{\"commands\":[{\"origin\":{\"module\":\"upgrade_module\"}, "
+                                  "\"command\":\"upgrade_update_status\","
+                                  "\"parameters\":{\"agents\":[20],\"error\":0,\"data\":\"Upgrade "
+                                  "Successful\",\"status\":\"Done\"}},"
+                                  "{\"origin\":{\"module\":\"upgrade_module\"},\"command\":\"upgrade_update_status\","
+                                  "\"parameters\":{\"agents\":[20],"
+                                  "\"error\":0,\"data\":\"Upgrade Successful\",\"status\":\"Done\"}}]}";
                 }
             }
             else
@@ -341,6 +360,8 @@ private:
         else
         {
             std::cout << "UUID not found in query parameters" << std::endl;
+            res_.result(http::status::bad_request);
+            res_.body() = "Invalid request format";
         }
     }
 
