@@ -1,14 +1,5 @@
 cmake_minimum_required(VERSION 3.12.4)
 
-# Set the path to vcpkg
-if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-  if(DEFINED ENV{VCPKG_ROOT})
-    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
-  else()
-    message(FATAL_ERROR "VCPKG_ROOT environment variable is not set")
-  endif()
-endif()
-
 project(dbsync)
 
 enable_testing()
@@ -44,10 +35,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 if(APPLE)
   set(CMAKE_MACOSX_RPATH 1)
 endif(APPLE)
-
-find_package(unofficial-sqlite3 CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
-find_package(cJSON CONFIG REQUIRED)
 
 include_directories(${CMAKE_SOURCE_DIR}/include/)
 include_directories(${CMAKE_SOURCE_DIR}/src/)
