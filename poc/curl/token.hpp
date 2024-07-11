@@ -28,10 +28,12 @@ bool verifyPassword(const std::string& uuid, const std::string& password)
 
 std::string createToken()
 {
-    auto token = jwt::create()
+     auto token = jwt::create()
                      .set_issuer("some-auth-server")
                      .set_type("JWS")
                      .set_payload_claim("sample", jwt::claim(std::string("test")))
+                     .set_issued_at(std::chrono::system_clock::now())
+                     .set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds{60})
                      .sign(jwt::algorithm::hs256 {"your-secret-key"});
 
     return token;
