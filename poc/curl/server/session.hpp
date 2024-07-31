@@ -116,7 +116,11 @@ private:
         }
         else if (req_.method() == http::verb::post)
         {
-            if (req_.target() == "/authentication")
+            if (req_.target() == "/authenticate")
+            {
+                handleServerLogin();
+            }
+            else if (req_.target() == "/authentication")
             {
                 handleLogin();
             }
@@ -166,6 +170,64 @@ private:
                               }
                           });
         std::cout << "==================== RESPONSE END =====================\n\n";
+    }
+
+    void handleServerLogin()
+    {
+        auto authHeader = req_["Authorization"];
+        std::string user_pass;
+        std::string user;
+        std::string password;
+        bool validRequest = true;
+
+        if (authHeader.empty() || authHeader.find("Basic ") != 0)
+        {
+            res_.result(http::status::unauthorized);
+            res_.body() = "Authorization header missing or incorrect";
+            return;
+        }
+
+        // Extrae y decodifica el valor de Authorization
+        user_pass = authHeader.substr(6);
+        std::size_t colonPos = user_pass.find(':');
+
+        if (colonPos == std::string::npos)
+        {
+            validRequest = false;
+        }
+        else
+        {
+            user = user_pass.substr(0, colonPos);
+            password = user_pass.substr(colonPos + 1);
+        }
+
+        if (user.empty() || password.empty())
+        {
+            validRequest = false;
+        }
+        else
+        {
+            if (verifyPassword(user, password))
+            {
+                std::string newToken = createToken();
+                validTokens[newToken] = {newToken, std::time(nullptr) + 3600}; // 1 hour expiry
+
+                res_.result(http::status::ok);
+                res_.body() = newToken;
+            }
+            else
+            {
+                res_.result(http::status::unauthorized);
+                res_.body() = "Invalid or expired password";
+            }
+        }
+
+        if (!validRequest)
+        {
+            res_.result(http::status::bad_request);
+            res_.body() = "Invalid request format";
+            return;
+        }
     }
 
     void handleLogin()
@@ -398,10 +460,6 @@ private:
             {
                 name = body[nameKey].get<std::string>();
             }
-            else
-            {
-                validRequest = false;
-            }
 
             if (!validRequest)
             {
@@ -415,10 +473,9 @@ private:
             std::cerr << "Error parsing JSON body: " << e.what() << std::endl;
         }
 
-        if (token == validTokens[uuid].token && verifyToken(token))
+        if (token == validTokens[token].token && verifyToken(token))
         {
             res_.result(http::status::ok);
-            res_.body() = "agent_key";
         }
         else
         {
