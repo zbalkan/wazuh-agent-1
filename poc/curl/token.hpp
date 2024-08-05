@@ -21,7 +21,12 @@ std::string generateToken()
     return token;
 }
 
-bool verifyPassword(const std::string& uuid, const std::string& password)
+bool verifyPassword(const std::string& user, const std::string& password)
+{
+    return true;
+}
+
+bool verifyUuid(const std::string& uuid)
 {
     return true;
 }
@@ -33,7 +38,7 @@ std::string createToken()
                      .set_type("JWS")
                      .set_payload_claim("sample", jwt::claim(std::string("test")))
                      .set_issued_at(std::chrono::system_clock::now())
-                     .set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds{60})
+                     .set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds{5})
                      .sign(jwt::algorithm::hs256 {"your-secret-key"});
 
     return token;

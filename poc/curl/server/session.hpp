@@ -234,7 +234,6 @@ private:
     {
         json body;
         std::string uuid;
-        std::string password;
         bool validRequest = true;
 
         try
@@ -244,15 +243,6 @@ private:
             if (body.contains(uuidKey) && body.at(uuidKey).is_string())
             {
                 uuid = body[uuidKey].get<std::string>();
-            }
-            else
-            {
-                validRequest = false;
-            }
-
-            if (body.contains(passwordKey) && body.at(passwordKey).is_string())
-            {
-                password = body[passwordKey].get<std::string>();
             }
             else
             {
@@ -271,10 +261,10 @@ private:
             std::cerr << "Error parsing JSON body: " << e.what() << std::endl;
         }
 
-        if (verifyPassword(uuid, password))
+        if (verifyUuid(uuid))
         {
             std::string newToken = createToken();
-            validTokens[uuid] = {newToken, std::time(nullptr) + 3600}; // 1 hour expiry
+            validTokens[newToken] = {newToken, std::time(nullptr) + 3600}; // 1 hour expiry
 
             res_.result(http::status::ok);
             res_.body() = newToken;
@@ -282,7 +272,7 @@ private:
         else
         {
             res_.result(http::status::unauthorized);
-            res_.body() = "Invalid or expired password";
+            res_.body() = "Invalid uuid";
         }
     }
 
@@ -378,52 +368,30 @@ private:
 
         std::string token = authHeader.substr(bearerPrefix.length());
         urls::url_view url_view(req_.target());
-        std::string uuid;
 
-        if (url_view.has_query())
+        if (token == validTokens[token].token && verifyToken(token))
         {
-            for (auto param : url_view.params())
+            if (randomValue == 0)
             {
-                if (param.key == uuidKey)
-                {
-                    uuid = std::string(param.value);
-                    break;
-                }
-            }
-        }
-
-        if (!uuid.empty())
-        {
-            if (token == validTokens[uuid].token && verifyToken(token))
-            {
-                if (randomValue == 0)
-                {
-                    std::this_thread::sleep_for(std::chrono::seconds(10));
-                    res_.result(http::status::request_timeout);
-                }
-                else
-                {
-                    res_.result(http::status::ok);
-                    res_.body() = "{\"commands\":[{\"origin\":{\"module\":\"upgrade_module\"}, "
-                                  "\"command\":\"upgrade_update_status\","
-                                  "\"parameters\":{\"agents\":[20],\"error\":0,\"data\":\"Upgrade "
-                                  "Successful\",\"status\":\"Done\"}},"
-                                  "{\"origin\":{\"module\":\"upgrade_module\"},\"command\":\"upgrade_update_status\","
-                                  "\"parameters\":{\"agents\":[20],"
-                                  "\"error\":0,\"data\":\"Upgrade Successful\",\"status\":\"Done\"}}]}";
-                }
+                std::this_thread::sleep_for(std::chrono::seconds(10));
+                res_.result(http::status::request_timeout);
             }
             else
             {
-                res_.result(http::status::unauthorized);
-                res_.body() = "Invalid or expired token";
+                res_.result(http::status::ok);
+                res_.body() = "{\"commands\":[{\"origin\":{\"module\":\"upgrade_module\"}, "
+                                "\"command\":\"upgrade_update_status\","
+                                "\"parameters\":{\"agents\":[20],\"error\":0,\"data\":\"Upgrade "
+                                "Successful\",\"status\":\"Done\"}},"
+                                "{\"origin\":{\"module\":\"upgrade_module\"},\"command\":\"upgrade_update_status\","
+                                "\"parameters\":{\"agents\":[20],"
+                                "\"error\":0,\"data\":\"Upgrade Successful\",\"status\":\"Done\"}}]}";
             }
         }
         else
         {
-            std::cout << "UUID not found in query parameters" << std::endl;
-            res_.result(http::status::bad_request);
-            res_.body() = "Invalid request format";
+            res_.result(http::status::unauthorized);
+            res_.body() = "Invalid or expired token";
         }
     }
 
