@@ -209,8 +209,8 @@ private:
         {
             if (verifyPassword(user, password))
             {
-                std::string newToken = createToken();
-                validTokens[newToken] = {newToken, std::time(nullptr) + 3600}; // 1 hour expiry
+                std::string newToken = createToken(user);
+                validTokens[user] = {newToken, std::time(nullptr) + 3600}; // 1 hour expiry
 
                 res_.result(http::status::ok);
                 res_.body() = newToken;
@@ -263,8 +263,8 @@ private:
 
         if (verifyUuid(uuid))
         {
-            std::string newToken = createToken();
-            validTokens[newToken] = {newToken, std::time(nullptr) + 3600}; // 1 hour expiry
+            std::string newToken = createToken(uuid);
+            validTokens[uuid] = {newToken, std::time(nullptr) + 3600}; // 1 hour expiry
 
             res_.result(http::status::ok);
             res_.body() = newToken;
@@ -328,7 +328,7 @@ private:
             std::cerr << "Error parsing JSON body: " << e.what() << std::endl;
         }
 
-        if (token == validTokens[uuid].token && verifyToken(token))
+        if (verifyToken(token))
         {
 
             try
@@ -369,7 +369,7 @@ private:
         std::string token = authHeader.substr(bearerPrefix.length());
         urls::url_view url_view(req_.target());
 
-        if (token == validTokens[token].token && verifyToken(token))
+        if (verifyToken(token))
         {
             if (randomValue == 0)
             {
@@ -441,7 +441,7 @@ private:
             std::cerr << "Error parsing JSON body: " << e.what() << std::endl;
         }
 
-        if (token == validTokens[token].token && verifyToken(token))
+        if (verifyToken(token))
         {
             res_.result(http::status::ok);
         }

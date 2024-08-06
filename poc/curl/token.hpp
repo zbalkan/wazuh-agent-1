@@ -31,12 +31,12 @@ bool verifyUuid(const std::string& uuid)
     return true;
 }
 
-std::string createToken()
+std::string createToken(const std::string& uuid)
 {
      auto token = jwt::create()
                      .set_issuer("some-auth-server")
                      .set_type("JWS")
-                     .set_payload_claim("sample", jwt::claim(std::string("test")))
+                     .set_payload_claim("uuid", jwt::claim(std::string(uuid)))
                      .set_issued_at(std::chrono::system_clock::now())
                      .set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds{5})
                      .sign(jwt::algorithm::hs256 {"your-secret-key"});
@@ -55,7 +55,17 @@ bool verifyToken(const std::string& token)
 
         verifier.verify(decoded);
 
-        return true;
+        if (decoded.has_payload_claim("uuid")) {
+            auto uuid_claim = decoded.get_payload_claim("uuid");
+            if (validTokens[uuid_claim.as_string()].token == token)
+            {
+                return true;
+            }
+        } else {
+            throw std::runtime_error("UUID claim not found in the token");
+        }
+
+        return false;
     }
     catch (const std::exception& e)
     {
