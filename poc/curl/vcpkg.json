@@ -5,12 +5,9 @@
       "boost-asio",
       "boost-beast",
       "boost-url",
-      "sqlite3",
-      "rocksdb",
       "openssl",
       "curl",
       "jwt-cpp",
-      "grpc",
-      "benchmark"
+      "nlohmann-json"
     ]
   }

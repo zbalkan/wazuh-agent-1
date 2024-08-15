@@ -1,78 +1,18 @@
 cmake_minimum_required(VERSION 3.10)
-project(CurlExample)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 
-# Set vcpkg toolchain file
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/../vcpkg/scripts/buildsystems/vcpkg.cmake)
-include(${CMAKE_TOOLCHAIN_FILE})
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake)
 
-# Set include and library paths
-set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-linux/include")
-set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-linux/lib")
+project(CurlExample)
 
-# Find Boost libraries
-find_package(Boost REQUIRED COMPONENTS system url)
-if(Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
-    link_directories(${Boost_LIBRARY_DIRS})
-endif()
-
-# Find SQLite3 library
-find_package(SQLite3 REQUIRED)
-include_directories(${SQLite3_INCLUDE_DIRS})
-
-# Find RocksDB library
-set(RocksDB_DIR "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-linux/share/rocksdb")
-find_package(RocksDB REQUIRED)
-
-# Find libcurl
-find_package(CURL REQUIRED)
-if(CURL_FOUND)
-    include_directories(${CURL_INCLUDE_DIRS})
-    link_directories(${CURL_LIBRARY_DIRS})
-endif()
-
-# Find zlib
-find_package(ZLIB REQUIRED)
-if(ZLIB_FOUND)
-    include_directories(${ZLIB_INCLUDE_DIRS})
-    link_directories(${ZLIB_LIBRARY_DIRS})
-endif()
-
-# Find OpenSSL
+find_package(Boost REQUIRED COMPONENTS asio beast system url)
 find_package(OpenSSL REQUIRED)
-
-# Find JWT-CPP
-find_path(JWT_CPP_INCLUDE_DIRS "jwt-cpp/base.h" HINTS ${CMAKE_CURRENT_LIST_DIR}/../vcpkg/installed/${VCPKG_TARGET_TRIPLET}/include)
-
-# Find Google Benchmark
-set(benchmark_DIR "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-linux/share/benchmark")
-find_package(benchmark CONFIG REQUIRED)
-
-include_directories(${CMAKE_SOURCE_DIR})
-include_directories(${CMAKE_SOURCE_DIR}/wazuh_shared)
-include_directories(${CMAKE_SOURCE_DIR}/external)
-
-add_subdirectory(wazuh-http-request)
-
-set(CPPCORO_SOURCES
-    cppcoro/static_thread_pool.cpp
-    cppcoro/spin_mutex.cpp
-    cppcoro/spin_wait.cpp
-    cppcoro/auto_reset_event.cpp
-)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_path(JWT_CPP_INCLUDE_DIRS "jwt-cpp/base.h" HINTS ${CMAKE_CURRENT_LIST_DIR}/vcpkg/installed/${VCPKG_TARGET_TRIPLET}/include)
 
 add_executable(server server.cpp)
-add_executable(client client_main.cpp ${CPPCORO_SOURCES})
-
-target_include_directories(server PRIVATE ${JWT_CPP_INCLUDE_DIRS})
-target_include_directories(client PRIVATE ${JWT_CPP_INCLUDE_DIRS})
-
-target_link_libraries(server Boost::system ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} ${SQLite3_LIBRARIES} RocksDB::rocksdb OpenSSL::SSL OpenSSL::Crypto urlrequest)
-target_link_libraries(client ${CURL_LIBRARIES} ${ZLIB_LIBRARIES} ${SQLite3_LIBRARIES} RocksDB::rocksdb OpenSSL::SSL OpenSSL::Crypto urlrequest)
-
-add_executable(benchmark_tests benchmark_event_queue_monitor.cpp ${CPPCORO_SOURCES})
-target_link_libraries(benchmark_tests benchmark::benchmark benchmark::benchmark_main ${SQLite3_LIBRARIES})
+target_include_directories(server PRIVATE ${JWT_CPP_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
+target_link_libraries(server ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto)

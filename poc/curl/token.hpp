@@ -33,12 +33,12 @@ bool verifyUuid(const std::string& uuid)
 
 std::string createToken(const std::string& uuid)
 {
-     auto token = jwt::create()
+    auto token = jwt::create()
                      .set_issuer("some-auth-server")
                      .set_type("JWS")
                      .set_payload_claim("uuid", jwt::claim(std::string(uuid)))
                      .set_issued_at(std::chrono::system_clock::now())
-                     .set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds{5})
+                     .set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds {30})
                      .sign(jwt::algorithm::hs256 {"your-secret-key"});
 
     return token;

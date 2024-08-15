@@ -110,8 +110,7 @@ private:
             }
             else
             {
-                res_.result(http::status::ok);
-                res_.body() = "Hello, World!";
+                res_.result(http::status::bad_gateway);
             }
         }
         else if (req_.method() == http::verb::post)
@@ -128,6 +127,10 @@ private:
             {
                 handleStateless();
             }
+            else if (req_.target() == "/stateful")
+            {
+                handleStateless();
+            }
             else if (req_.target() == "/commands")
             {
                 res_.result(http::status::ok);
@@ -139,8 +142,7 @@ private:
             }
             else
             {
-                res_.result(http::status::ok);
-                res_.body() = "Received: " + req_.body();
+                res_.result(http::status::bad_gateway);
             }
         }
         else
@@ -297,19 +299,20 @@ private:
         {
             body = json::parse(req_.body());
 
-            if (body.contains(uuidKey) && body.at(uuidKey).is_string())
+            if (body["data"].contains(uuidKey) && body["data"].at(uuidKey).is_string())
             {
-                uuid = body[uuidKey].get<std::string>();
+                uuid = body["data"][uuidKey].get<std::string>();
             }
             else
             {
                 validRequest = false;
             }
 
-            if (body.contains(eventKey) && body[eventKey].is_object() && body[eventKey].contains(eventsKey) &&
-                body[eventKey][eventsKey].is_array())
+            if (body.contains("data") && body["data"].is_object() && body["data"].contains(eventKey) &&
+                body["data"][eventKey].is_object() && body["data"][eventKey].contains(eventsKey) &&
+                body["data"][eventKey][eventsKey].is_array())
             {
-                events = body[eventKey][eventsKey].dump();
+                events = body["data"][eventKey][eventsKey].dump();
             }
             else
             {
@@ -326,6 +329,8 @@ private:
         catch (const std::exception& e)
         {
             std::cerr << "Error parsing JSON body: " << e.what() << std::endl;
+            res_.body() = "Invalid request format";
+            res_.result(http::status::bad_request);
         }
 
         if (verifyToken(token))
@@ -342,7 +347,7 @@ private:
             }
 
             res_.result(http::status::ok);
-            res_.body() = "Stateless post request received";
+            res_.body() = "Post request received";
         }
         else
         {
