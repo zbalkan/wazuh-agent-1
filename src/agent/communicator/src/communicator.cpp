@@ -86,7 +86,7 @@ namespace communicator
     {
         auto onAuthenticationFailed = [this]()
         {
-            TryReAuthenticate();
+            // TryReAuthenticate();
         };
 
         auto loopCondition = [this]()
@@ -148,7 +148,7 @@ namespace communicator
     {
         auto onAuthenticationFailed = [this]()
         {
-            TryReAuthenticate();
+            // TryReAuthenticate();
         };
 
         auto loopCondition = [this]()
@@ -168,7 +168,7 @@ namespace communicator
     {
         auto onAuthenticationFailed = [this]()
         {
-            TryReAuthenticate();
+            // TryReAuthenticate();
         };
 
         auto loopCondition = [this]()
