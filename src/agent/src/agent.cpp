@@ -35,10 +35,6 @@ void Agent::Run()
     //                                    {"status", "Pending"}};
     //
 
-    const nlohmann::json dataContent = {{"command", "upgradeModule"}, {"status", "Pending"}};
-    const Message messageToSend {MessageType::COMMAND, dataContent, "CommandHandler"};
-    m_agentQueue.push(messageToSend);
-
     m_taskManager.EnqueueTask(m_communicator.WaitForTokenExpirationAndAuthenticate());
 
     m_taskManager.EnqueueTask(m_communicator.GetCommandsFromManager(
@@ -53,6 +49,25 @@ void Agent::Run()
         [this]() { return GetMessagesFromQueue(m_messageQueue, MessageType::STATELESS); },
         [this]([[maybe_unused]] const std::string& response)
         { PopMessagesFromQueue(m_messageQueue, MessageType::STATELESS); }));
+
+
+    // Push message to Agent Queue every 100 seconds.
+    m_taskManager.EnqueueTask([this]() -> boost::asio::awaitable<void> {
+
+        while (true) {
+            // Push the message
+            const nlohmann::json dataContent = {{"command", "upgradeModule"}, {"status", "Pending"}};
+            std::cout << "--------------------------------" << std::endl;
+            std::cout << "Push command to the agent queue:" << std::endl;
+            std::cout << dataContent << std::endl;
+            std::cout << "--------------------------------" << std::endl;
+
+            const Message messageToSend {MessageType::COMMAND, dataContent, "CommandHandler"};
+            m_agentQueue.push(messageToSend);
+            std::this_thread::sleep_for(std::chrono::seconds(100));
+        }
+    });
+
 
     m_taskManager.EnqueueTask(m_commandHandler.ProcessCommandsFromQueue<Message>(
         [this]() -> std::optional<Message>
@@ -83,14 +98,14 @@ void Agent::Run()
             }
 
             // change status and push again
-            // if (jdataData.at("status") == "Pending")
-            //{
-            //     std::cout << "Message status is Pending. Updating status and pushing back." << std::endl;
-            //     jdataData["status"] = "InProcess";
-            //     Message newMessage(MessageType::COMMAND, jdataData, "CommandHandler");
-            //     // m_agentQueue.push(newMessage);
-            //     // return m;
-            // }
+            if (jdataData.at("status") == "Pending")
+            {
+                std::cout << "Message status is Pending. Updating status and pushing back." << std::endl;
+                jdataData["status"] = "InProcess";
+                Message newMessage(MessageType::COMMAND, jdataData, "CommandHandler");
+                // m_agentQueue.push(newMessage);
+                // return m;
+            }
 
             return m;
         },
