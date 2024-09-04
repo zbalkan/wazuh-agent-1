@@ -87,7 +87,16 @@ namespace command_store
 
     void CommandStore::DeleteCommand(int id)
     {
-        std::cout << "Deleting command " << id << "\n";
+        std::vector<sqlite_manager::Column> fields;
+        fields.push_back(sqlite_manager::Column("Id", sqlite_manager::ColumnType::INTEGER, std::to_string(id)));
+        try
+        {
+            m_dataBase->Remove(COMMANDSTORE_TABLE_NAME, fields);
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "DeleteCommand operation failed.\n";
+        }
     }
 
 } // namespace command_store
