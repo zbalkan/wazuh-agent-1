@@ -35,7 +35,7 @@ namespace command_store
         }
         catch (std::exception& e)
         {
-            std::cerr << "CreateTable operation failed.\n";
+            std::cerr << "CreateTable operation failed. " << e.what() << "\n";
         }
     }
 
@@ -47,7 +47,7 @@ namespace command_store
         }
         catch (const std::exception& e)
         {
-            std::cerr << "Clear operation failed\n";
+            std::cerr << "Clear operation failed. " << e.what() << "\n";
         }
     }
 
@@ -60,7 +60,7 @@ namespace command_store
         }
         catch (const std::exception& e)
         {
-            std::cerr << "GetCount operation failed.\n";
+            std::cerr << "GetCount operation failed. " << e.what() << "\n";
         }
 
         return count;
@@ -92,21 +92,21 @@ namespace command_store
         }
         catch (const std::exception& e)
         {
-            std::cerr << "StoreCommand operation failed.\n";
+            std::cerr << "StoreCommand operation failed. " << e.what() << "\n";
         }
     }
 
     void CommandStore::DeleteCommand(int id)
     {
         std::vector<sqlite_manager::Column> fields;
-        fields.emplace_back(sqlite_manager::Column("id", sqlite_manager::ColumnType::INTEGER, std::to_string(id)));
+        fields.emplace_back("id", sqlite_manager::ColumnType::INTEGER, std::to_string(id));
         try
         {
             m_dataBase->Remove(COMMANDSTORE_TABLE_NAME, fields);
         }
         catch (const std::exception& e)
         {
-            std::cerr << "DeleteCommand operation failed.\n";
+            std::cerr << "DeleteCommand operation failed. " << e.what() << "\n";
         }
     }
 
@@ -120,7 +120,7 @@ namespace command_store
         Command cmd;
         if (!cmdData.empty())
         {
-            for (sqlite_manager::Column col : cmdData[0])
+            for (const sqlite_manager::Column& col : cmdData[0])
             {
                 if (col.m_name == "id")
                 {
