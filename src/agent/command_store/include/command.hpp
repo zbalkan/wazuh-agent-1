@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <string>
 
 namespace command_store
@@ -8,14 +9,20 @@ namespace command_store
     {
         SUCCESS,
         ERROR,
-        INPROCESS,
-        TIMEOUT
+        IN_PROGRESS,
+        TIMEOUT,
+        UNKNOWN
     };
 
     class Command
     {
     public:
-        Command() {}
+        Command()
+            : m_id(std::numeric_limits<int>::min())
+            , m_status(Status::SUCCESS)
+            , m_time(0.0)
+        {
+        }
 
         Command(
             int id, const std::string& module, const std::string& command, const std::string& parameters, Status status)
@@ -27,7 +34,7 @@ namespace command_store
         {
         }
 
-        int m_id;
+        int m_id {-1};
         std::string m_module;
         std::string m_command;
         std::string m_parameters;
