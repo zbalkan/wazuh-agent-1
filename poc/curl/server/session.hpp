@@ -356,6 +356,45 @@ private:
         }
     }
 
+    std::string GenerateRandomId()
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> distrib(1, 32000);
+        int64_t randomValue = distrib(gen);
+
+        auto now = std::chrono::system_clock::now();
+
+        // Convert to time_t to extract the time of day
+        std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+        std::tm local_tm = *std::localtime(&now_c);
+
+        // Calculate the time point corresponding to today's midnight
+        auto midnight = std::chrono::system_clock::from_time_t(std::mktime(&local_tm));
+        midnight -= std::chrono::hours(local_tm.tm_hour);  // Reset hours
+        midnight -= std::chrono::minutes(local_tm.tm_min); // Reset minutes
+        midnight -= std::chrono::seconds(local_tm.tm_sec); // Reset seconds
+
+        auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now - midnight).count();
+        milliseconds += randomValue;
+        return std::to_string(milliseconds);
+    }
+
+    std::string InsertRandomIds(const std::string& jsonStr)
+    {
+        std::string result = jsonStr;
+        size_t pos = 0;
+        while ((pos = result.find("\"id\":", pos)) != std::string::npos)
+        {
+            size_t start = result.find("\"", pos + 5) + 1;
+            size_t end = result.find("\"", start);
+            std::string newId = GenerateRandomId();
+            result.replace(start, end - start, newId);
+            pos = end + 1;
+        }
+        return result;
+    }
+
     void handleCommands()
     {
         auto authHeader = req_["Authorization"];
@@ -378,19 +417,22 @@ private:
         {
             if (randomValue == 0)
             {
-                std::this_thread::sleep_for(std::chrono::seconds(10));
+                std::this_thread::sleep_for(std::chrono::seconds(5));
                 res_.result(http::status::request_timeout);
             }
             else
             {
                 res_.result(http::status::ok);
-                res_.body() = "{\"commands\":[{\"origin\":{\"module\":\"upgrade_module\"}, "
-                                "\"command\":\"upgrade_update_status\","
-                                "\"parameters\":{\"agents\":[20],\"error\":0,\"data\":\"Upgrade "
-                                "Successful\",\"status\":\"Done\"}},"
-                                "{\"origin\":{\"module\":\"upgrade_module\"},\"command\":\"upgrade_update_status\","
-                                "\"parameters\":{\"agents\":[20],"
-                                "\"error\":0,\"data\":\"Upgrade Successful\",\"status\":\"Done\"}}]}";
+                std::string body =
+                    "{\"commands\":[{\"id\": \"1234\",\"origin\":{\"module\":\"upgrade_module\"}, "
+                    "\"command\":\"upgrade_update_status\","
+                    "\"parameters\":{\"agents\":[20],\"error\":0,\"data\":\"Upgrade "
+                    "Successful\",\"status\":\"Done\"}},"
+                    "{\"id\": \"1235\",\"origin\":{\"module\":\"upgrade_module\"},\"command\":\"sucu_trule\","
+                    "\"parameters\":{\"agents\":[20],"
+                    "\"error\":0,\"data\":\"Command Successful\",\"status\":\"Done\"}}]}";
+
+                res_.body() = InsertRandomIds(body);
             }
         }
         else
