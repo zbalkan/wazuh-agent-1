@@ -1,10 +1,11 @@
 #pragma once
 
-#include <ihttp_client.hpp>
+#include <agent_info.hpp>
+#include <configuration_parser.hpp>
 
 #include <string>
 
-namespace registration
+namespace agent_registration
 {
     struct UserCredentials
     {
@@ -12,6 +13,18 @@ namespace registration
         std::string password;
     };
 
-    bool RegisterAgent(const UserCredentials& userCredentials, http_client::IHttpClient& httpClient);
+    class AgentRegistration
+    {
+    public:
+        AgentRegistration(std::string user, std::string password, const std::string& key, const std::string& name);
+        bool SendRegistration();
 
-} // namespace registration
+    private:
+        configuration::ConfigurationParser m_configurationParser;
+        std::string m_managerIp;
+        std::string m_managerPort;
+        std::string m_user;
+        std::string m_password;
+        AgentInfo m_agentInfo;
+    };
+} // namespace agent_registration

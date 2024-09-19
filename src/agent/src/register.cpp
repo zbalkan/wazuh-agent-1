@@ -1,7 +1,6 @@
 #include <register.hpp>
 
-#include <agent_info.hpp>
-#include <configuration_parser.hpp>
+#include <http_client.hpp>
 #include <logger.hpp>
 
 #include <boost/beast/http.hpp>
@@ -9,16 +8,29 @@
 
 namespace http = boost::beast::http;
 
-namespace registration
+namespace agent_registration
 {
-    bool RegisterAgent(const UserCredentials& userCredentials, http_client::IHttpClient& httpClient)
+    AgentRegistration::AgentRegistration(std::string user,
+                                         std::string password,
+                                         const std::string& key,
+                                         const std::string& name)
+        : m_managerIp(m_configurationParser.GetConfig<std::string>("agent", "manager_ip"))
+        , m_managerPort(m_configurationParser.GetConfig<std::string>("agent", "server_mgmt_api_port"))
+        , m_user(std::move(user))
+        , m_password(std::move(password))
     {
-        const configuration::ConfigurationParser configurationParser;
-        const auto managerIp = configurationParser.GetConfig<std::string>("agent", "manager_ip");
-        const auto managerPort = configurationParser.GetConfig<std::string>("agent", "server_mgmt_api_port");
 
-        const auto token = httpClient.AuthenticateWithUserPassword(
-            managerIp, managerPort, userCredentials.user, userCredentials.password);
+        m_agentInfo.SetKey(key);
+        if (!name.empty())
+        {
+            m_agentInfo.SetName(name);
+        }
+    }
+
+    bool AgentRegistration::SendRegistration()
+    {
+        http_client::HttpClient httpClient;
+        const auto token = httpClient.AuthenticateWithUserPassword(m_managerIp, m_managerPort, m_user, m_password);
 
         if (!token.has_value())
         {
@@ -26,17 +38,15 @@ namespace registration
             return false;
         }
 
-        const AgentInfo agentInfo {};
+        nlohmann::json bodyJson = {{"id", m_agentInfo.GetUUID()}, {"key", m_agentInfo.GetKey()}};
 
-        nlohmann::json bodyJson = {{"id", agentInfo.GetUUID()}, {"key", agentInfo.GetKey()}};
-
-        if (!agentInfo.GetName().empty())
+        if (!m_agentInfo.GetName().empty())
         {
-            bodyJson["name"] = agentInfo.GetName();
+            bodyJson["name"] = m_agentInfo.GetName();
         }
 
         const auto reqParams = http_client::HttpRequestParams(
-            http::verb::post, managerIp, managerPort, "/agents", token.value(), "", bodyJson.dump());
+            http::verb::post, m_managerIp, m_managerPort, "/agents", token.value(), "", bodyJson.dump());
 
         const auto res = httpClient.PerformHttpRequest(reqParams);
 
@@ -49,4 +59,4 @@ namespace registration
         return true;
     }
 
-} // namespace registration
+} // namespace agent_registration
