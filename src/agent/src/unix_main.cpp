@@ -2,11 +2,13 @@
 #include <logger.hpp>
 #include <process_options.hpp>
 #include <register.hpp>
+
 #include <unix_daemon.hpp>
 
 #include <chrono>
 #include <iostream>
 #include <syslog.h>
+#include <unistd.h>
 
 int main(int argc, char* argv[])
 {
@@ -43,6 +45,16 @@ int main(int argc, char* argv[])
         }
         else if (cmdParser.OptionExists("start"))
         {
+            // unix_daemon::Daemonize();
+            int ret = daemon(1, 0);
+            if (ret == 0)
+            {
+                syslog(LOG_INFO, "Wazuh-Daemon started");
+            }
+            else
+            {
+                syslog(LOG_INFO, "Wazuh Daemon start failed");
+            }
             StartAgent();
         }
         else if (cmdParser.OptionExists("status"))
