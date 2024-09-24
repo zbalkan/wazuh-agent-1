@@ -8,8 +8,6 @@
 #include <inventory.hpp>
 #include <sysInfo.hpp>
 
-using namespace std;
-
 constexpr const char* INV_LOGTAG = "modules:inventory"; // Tag for log messages
 
 void Inventory::Start() {
@@ -62,7 +60,7 @@ void Inventory::Stop() {
     Inventory::Instance().Destroy();
 }
 
-string Inventory::Command(const string & query) {
+std::string Inventory::Command(const std::string & query) {
     Log(LOG_INFO, "Query: " + query);
     return "OK";
 }
@@ -71,7 +69,7 @@ void Inventory::SetMessageQueue(const std::shared_ptr<IMultiTypeQueue> queue) {
     m_messageQueue = queue;
 }
 
-void Inventory::SendDeltaEvent(const string& data) {
+void Inventory::SendDeltaEvent(const std::string& data) {
 
     const auto jsonData = nlohmann::json::parse(data);
     const Message message{ MessageType::STATELESS, jsonData, Name() };

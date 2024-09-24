@@ -4,12 +4,10 @@
 #include <string>
 #include "configuration.hpp"
 
-using namespace std;
-
 struct ModuleWrapper {
-    function<void()> start;
-    function<int(const Configuration&)> setup;
-    function<void()> stop;
-    function<string(const string&)> command;
-    function<string()> name;
+    std::function<void()> start;
+    std::function<int(const Configuration&)> setup;
+    std::function<void()> stop;
+    std::function<std::string(const std::string&)> command;
+    std::function<std::string()> name;
 };
