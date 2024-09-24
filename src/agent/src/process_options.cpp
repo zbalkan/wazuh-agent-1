@@ -1,8 +1,10 @@
 #include <agent.hpp>
+#include <file_utils.hpp>
 #include <logger.hpp>
 #include <process_options.hpp>
 
 #include <iostream>
+#include <vector>
 
 void StartAgent()
 {
@@ -24,7 +26,30 @@ void StopAgent()
 {
     LogInfo("Stopping Wazuh Agent.");
 
-    // TO DO
+    PIDFileUtils pidFileUtils;
+
+    std::vector<pid_t> pids = pidFileUtils.GetPIDFiles();
+
+    for (const auto& pid : pids)
+    {
+        if (kill(pid, SIGTERM) == 0)
+        {
+            std::cout << "Terminated process with PID: " << pid << std::endl;
+        }
+        else
+        {
+            std::cerr << "Failed to terminate process with PID: " << pid << std::endl;
+            if (kill(pid, SIGKILL) == 0)
+            {
+                std::cout << "Killed process with PID: " << pid << std::endl;
+            }
+            else
+            {
+                std::cerr << "Failed to kill process with PID: " << pid << std::endl;
+            }
+        }
+        pidFileUtils.DeletePIDFile(pid);
+    }
 }
 
 void PrintHelp()

@@ -47,6 +47,7 @@ int main(int argc, char* argv[])
         {
             // unix_daemon::Daemonize();
             int ret = daemon(1, 0);
+
             if (ret == 0)
             {
                 syslog(LOG_INFO, "Wazuh-Daemon started");
