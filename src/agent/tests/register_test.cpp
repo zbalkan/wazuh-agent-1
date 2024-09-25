@@ -59,7 +59,7 @@ protected:
 
     MockHttpClient mockHttpClient;
     std::unique_ptr<AgentInfo> agent;
-    registration::UserCredentials userCredentials {"user", "password"};
+    agent_registration::UserCredentials userCredentials {"user", "password"};
 };
 
 TEST_F(RegisterTest, RegistrationTestSuccess)
@@ -84,7 +84,9 @@ TEST_F(RegisterTest, RegistrationTestSuccess)
     EXPECT_CALL(mockHttpClient, PerformHttpRequest(testing::Eq(reqParams))).WillOnce(testing::Return(expectedResponse));
 
     // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-    const bool res = registration::RegisterAgent(userCredentials, mockHttpClient);
+    agent_registration::AgentRegistration reg(
+        userCredentials.user, userCredentials.password, "agent_key", "agent_name");
+    const bool res = reg.SendRegistration();
     ASSERT_TRUE(res);
 }
 
@@ -94,7 +96,9 @@ TEST_F(RegisterTest, RegistrationFailsIfAuthenticationFails)
         .WillOnce(testing::Return(std::nullopt));
 
     // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-    const bool res = registration::RegisterAgent(userCredentials, mockHttpClient);
+    agent_registration::AgentRegistration reg(
+        userCredentials.user, userCredentials.password, "agent_key", "agent_name");
+    const bool res = reg.SendRegistration();
     ASSERT_FALSE(res);
 }
 
@@ -110,7 +114,9 @@ TEST_F(RegisterTest, RegistrationFailsIfServerResponseIsNotOk)
     EXPECT_CALL(mockHttpClient, PerformHttpRequest(testing::_)).WillOnce(testing::Return(expectedResponse));
 
     // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-    const bool res = registration::RegisterAgent(userCredentials, mockHttpClient);
+    agent_registration::AgentRegistration reg(
+        userCredentials.user, userCredentials.password, "agent_key", "agent_name");
+    const bool res = reg.SendRegistration();
     ASSERT_FALSE(res);
 }
 
